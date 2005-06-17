@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="SIPCreator" default="sign" basedir=".">
+	<target name="clean" description="Removes the old class files and JAR">
+		<delete file="SIPCreator.jar"/>
+	</target>
+	<target name="compile" description="build all java classes into bin">
+    	<javac srcdir="src" destdir="bin" includes="**" classpath="lib/axis.jar"/>
+	</target>
+	<target name="jar" description="build the SIPCreator JAR file">
+    	<jar jarfile="SIPCreator.jar" basedir="bin" includes="**/*.class"/>
+	</target>
+	<target name="sign" depends="jar" description="Signs the JAR file">
+		<signjar jar="SIPCreator.jar" alias="SIPCreator" storepass="MLTMD135"/>
+	</target>
+	<target name="deploy" depends="sign" description="Puts the signed JAR on the web">
+		<move file="SIPCreator.jar" todir="Z:\\MyWeb"/>
+		<copydir dest="Z:\\MyWeb" src="config"/>
+	</target>
+</project>
