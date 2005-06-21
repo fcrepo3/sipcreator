@@ -6,23 +6,23 @@ import javax.swing.tree.TreeNode;
 
 import fedora.services.sipcreator.acceptor.SIPEntryAcceptor;
 
-public class FileTreeNode implements TreeNode {
+public class SelectableEntryNode implements TreeNode {
     
-    private SIPEntry entry;
+    private SelectableEntry entry;
     
-    private FileTreeNode parent;
+    private SelectableEntryNode parent;
     
     private Hashtable childrenNodeTable = new Hashtable();
     
     private SIPEntryAcceptor acceptor;
     
-    public FileTreeNode(SIPEntry newEntry, FileTreeNode newParent, SIPEntryAcceptor newAcceptor) {
+    public SelectableEntryNode(SelectableEntry newEntry, SelectableEntryNode newParent, SIPEntryAcceptor newAcceptor) {
         entry = newEntry;
         parent = newParent;
         acceptor = newAcceptor;
     }
     
-    public SIPEntry getEntry() {
+    public SelectableEntry getEntry() {
         return entry;
     }
 
@@ -31,11 +31,11 @@ public class FileTreeNode implements TreeNode {
     }
 
     public boolean getAllowsChildren() {
-        return entry.getFile().isDirectory();
+        return entry.isDirectory();
     }
 
     public boolean isLeaf() {
-        return !entry.getFile().isDirectory();
+        return !entry.isDirectory();
     }
 
     public Enumeration children() {
@@ -55,7 +55,7 @@ public class FileTreeNode implements TreeNode {
     }
 
     public int getIndex(TreeNode node) {
-        FileTreeNode casted = (FileTreeNode)node;
+        SelectableEntryNode casted = (SelectableEntryNode)node;
         return getEntry().getIndex(casted.getEntry(), acceptor);
     }
 
@@ -64,17 +64,17 @@ public class FileTreeNode implements TreeNode {
     }
 
     public TreeNode getChildAt(int index) {
-        SIPEntry childEntry = getEntry().getChildAt(index, acceptor);
-        FileTreeNode node = (FileTreeNode)childrenNodeTable.get(childEntry.getFile());
+        SelectableEntry childEntry = getEntry().getChildAt(index, acceptor);
+        SelectableEntryNode node = (SelectableEntryNode)childrenNodeTable.get(childEntry.getID());
         if (node == null) {
-            node = new FileTreeNode(childEntry, this, acceptor);
-            childrenNodeTable.put(childEntry.getFile(), node);
+            node = new SelectableEntryNode(childEntry, this, acceptor);
+            childrenNodeTable.put(childEntry.getID(), node);
         }
         return node;
     }
 
     public String toString() {
-        return entry.getFile().getName();
+        return entry.toString();
     }
     
 }

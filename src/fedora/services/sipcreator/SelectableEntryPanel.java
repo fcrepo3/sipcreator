@@ -22,7 +22,7 @@ import fedora.services.sipcreator.metadata.MetadataPanel;
 import fedora.services.sipcreator.utility.GUIUtility;
 import fedora.services.sipcreator.utility.HideablePanel;
 
-public class SIPEntryPanel extends JPanel implements ActionListener {
+public class SelectableEntryPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 4049918281383228216L;
 
@@ -35,12 +35,12 @@ public class SIPEntryPanel extends JPanel implements ActionListener {
     
     private JTabbedPane metadataPane = new JTabbedPane(JTabbedPane.TOP);
     
-    private SIPEntry entry;
+    private SelectableEntry entry;
     
     private SIPCreator creator;
     
     
-    public SIPEntryPanel(SIPEntry newEntry, SIPCreator newCreator) {
+    public SelectableEntryPanel(SelectableEntry newEntry, SIPCreator newCreator) {
         super(new BorderLayout(5, 5));
 
         entry = newEntry;

@@ -13,8 +13,8 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.tree.TreeCellRenderer;
 
-import fedora.services.sipcreator.FileTreeNode;
-import fedora.services.sipcreator.SIPEntry;
+import fedora.services.sipcreator.SelectableEntryNode;
+import fedora.services.sipcreator.FileSystemEntry;
 
 public class CheckRenderer extends JPanel implements TreeCellRenderer {
     
@@ -39,13 +39,13 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer {
     
     public Component getTreeCellRendererComponent(JTree tree, Object value,
             boolean isSelected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-        FileTreeNode cNodeValue = value instanceof FileTreeNode ? (FileTreeNode)value : null;
+        SelectableEntryNode cNodeValue = value instanceof SelectableEntryNode ? (SelectableEntryNode)value : null;
         String stringValue = tree.convertValueToText(value, isSelected, expanded, leaf, row, hasFocus);
         setEnabled(tree.isEnabled());
         
         if (!checkBoxHidden && cNodeValue != null) {
-            check.setSelected(cNodeValue.getEntry().getSelectionLevel() != SIPEntry.UNSELECTED);
-            check.setEnabled(cNodeValue.getEntry().getSelectionLevel() != SIPEntry.PARTIALLY_SELECTED);
+            check.setSelected(cNodeValue.getEntry().getSelectionLevel() != FileSystemEntry.UNSELECTED);
+            check.setEnabled(cNodeValue.getEntry().getSelectionLevel() != FileSystemEntry.PARTIALLY_SELECTED);
             check.setForeground(UIManager.getColor("Tree.textForeground"));
             check.setVisible(true);
         } else {

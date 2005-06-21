@@ -1,10 +1,10 @@
 package fedora.services.sipcreator.acceptor;
 
-import fedora.services.sipcreator.SIPEntry;
+import fedora.services.sipcreator.SelectableEntry;
 
 public class UniversalAcceptor implements SIPEntryAcceptor {
 
-    public boolean isEntryAcceptable(SIPEntry entry) {
+    public boolean isEntryAcceptable(SelectableEntry entry) {
         return true;
     }
    

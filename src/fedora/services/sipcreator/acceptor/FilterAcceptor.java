@@ -2,7 +2,7 @@ package fedora.services.sipcreator.acceptor;
 
 import java.util.regex.Pattern;
 
-import fedora.services.sipcreator.SIPEntry;
+import fedora.services.sipcreator.SelectableEntry;
 
 public class FilterAcceptor implements SIPEntryAcceptor {
 
@@ -36,10 +36,10 @@ public class FilterAcceptor implements SIPEntryAcceptor {
         filter = newFilter;
     }
     
-    public boolean isEntryAcceptable(SIPEntry entry) {
+    public boolean isEntryAcceptable(SelectableEntry entry) {
 //        try {
-        return !enabled || (acceptDirecotries && entry.getFile().isDirectory()) ||
-            Pattern.matches(filter, entry.getFile().getName());
+        return !enabled || (acceptDirecotries && entry.isDirectory()) ||
+            Pattern.matches(filter, entry.getShortName());
 //        } catch (PatternSyntaxException pse) {
 //            return false;
 //        }

@@ -21,12 +21,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import fedora.services.sipcreator.FileTreeNode;
+import fedora.services.sipcreator.SelectableEntryNode;
 import fedora.services.sipcreator.SIPCreator;
-import fedora.services.sipcreator.SIPEntry;
+import fedora.services.sipcreator.FileSystemEntry;
+import fedora.services.sipcreator.SelectableEntry;
 import fedora.services.sipcreator.acceptor.UniversalAcceptor;
 import fedora.services.sipcreator.utility.CheckRenderer;
 import fedora.services.sipcreator.utility.GUIUtility;
@@ -72,17 +74,17 @@ public class FileSelectTask extends JPanel {
     }
 
     
-    public void updateTree(String rootDirectoryName, SIPEntry newRoot) {
+    public void updateTree(String rootDirectoryName, SelectableEntry newRoot) {
         fileSelectDirectoryLabel.setText(rootDirectoryName);
-        fileSelectTreeModel.setRoot(new FileTreeNode(newRoot, null, acceptor));
+        fileSelectTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
     }
     
     public void refreshTree() {
-        fileSelectTreeModel.nodeStructureChanged((FileTreeNode)fileSelectTreeModel.getRoot());
+        fileSelectTreeModel.nodeStructureChanged((TreeNode)fileSelectTreeModel.getRoot());
     }
     
-    public SIPEntry getRootEntry() {
-        FileTreeNode rootNode = (FileTreeNode)fileSelectTreeModel.getRoot();
+    public SelectableEntry getRootEntry() {
+        SelectableEntryNode rootNode = (SelectableEntryNode)fileSelectTreeModel.getRoot();
         return (rootNode == null ? null : rootNode.getEntry());
     }
     
@@ -110,12 +112,12 @@ public class FileSelectTask extends JPanel {
             Rectangle bounds = fileSelectTreeDisplay.getPathBounds(path);
             if (x > bounds.x + fileSelectTreeRenderer.getCheckBoxWidth() - 2) return;
             
-            FileTreeNode node = (FileTreeNode)path.getLastPathComponent();
-            boolean fullySelected = node.getEntry().getSelectionLevel() == SIPEntry.FULLY_SELECTED; 
-            int selectionLevel = fullySelected ? SIPEntry.UNSELECTED : SIPEntry.FULLY_SELECTED;
+            SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
+            boolean fullySelected = node.getEntry().getSelectionLevel() == FileSystemEntry.FULLY_SELECTED; 
+            int selectionLevel = fullySelected ? FileSystemEntry.UNSELECTED : FileSystemEntry.FULLY_SELECTED;
             node.getEntry().setSelectionLevel(selectionLevel, acceptor);
             
-            FileTreeNode nodeParent = (FileTreeNode)node.getParent();
+            SelectableEntryNode nodeParent = (SelectableEntryNode)node.getParent();
             if (nodeParent != null) {
                 nodeParent.getEntry().setSelectionLevelFromChildren(acceptor);
             }
@@ -141,8 +143,17 @@ public class FileSelectTask extends JPanel {
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int choice = fileChooser.showOpenDialog(parent);
             if (choice != JFileChooser.APPROVE_OPTION) return;
-            SIPEntry rootEntry = null;
-            String rootDirectoryName = null;
+            
+            File file = fileChooser.getSelectedFile();
+            FileSystemEntry rootEntry;
+            String rootDirectoryName;
+            
+            if (file.getName().equalsIgnoreCase("METS.xml")) {
+                JOptionPane.showMessageDialog(parent,
+                        "The root directory cannot use METS.xml as a name, " +
+                        "that name is reserved for the descriptive metadata file.");
+                return;
+            }
             
             if (fileSelectTreeModel.getRoot() != null) {
                 choice = JOptionPane.showConfirmDialog(parent,
@@ -152,10 +163,9 @@ public class FileSelectTask extends JPanel {
             }
             
             try {
-                File file = fileChooser.getSelectedFile();
                 rootDirectoryName = file.getCanonicalPath();
-                rootEntry = new SIPEntry(file, null, parent);
-                rootEntry.setSelectionLevel(SIPEntry.UNSELECTED, acceptor);
+                rootEntry = new FileSystemEntry(file, null, parent);
+                rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
             } catch (IOException ioe) {
                 GUIUtility.showExceptionDialog(parent, ioe);
                 return;

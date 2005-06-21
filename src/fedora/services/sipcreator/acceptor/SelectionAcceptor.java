@@ -1,6 +1,6 @@
 package fedora.services.sipcreator.acceptor;
 
-import fedora.services.sipcreator.SIPEntry;
+import fedora.services.sipcreator.SelectableEntry;
 
 public class SelectionAcceptor implements SIPEntryAcceptor {
 
@@ -21,7 +21,7 @@ public class SelectionAcceptor implements SIPEntryAcceptor {
         allowableSelectionStates = newAllowableSelectionStates;
     }
     
-    public boolean isEntryAcceptable(SIPEntry entry) {
+    public boolean isEntryAcceptable(SelectableEntry entry) {
         return (entry.getSelectionLevel() & allowableSelectionStates) == entry.getSelectionLevel();
     }
 

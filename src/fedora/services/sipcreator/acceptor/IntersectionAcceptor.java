@@ -2,7 +2,7 @@ package fedora.services.sipcreator.acceptor;
 
 import java.util.Vector;
 
-import fedora.services.sipcreator.SIPEntry;
+import fedora.services.sipcreator.SelectableEntry;
 
 public class IntersectionAcceptor implements SIPEntryAcceptor {
 
@@ -12,7 +12,7 @@ public class IntersectionAcceptor implements SIPEntryAcceptor {
         return acceptorList;
     }
     
-    public boolean isEntryAcceptable(SIPEntry entry) {
+    public boolean isEntryAcceptable(SelectableEntry entry) {
         if (acceptorList.size() == 0) {
             return false;
         }

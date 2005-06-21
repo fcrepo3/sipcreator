@@ -56,6 +56,7 @@ D  * Close all metadata tabs when switching
    * Allow web directories too
 D  * Find a way to hide unselected files
 D  * Integrate Filtering
+D    * Remove Filtering
 D  * Fix ellipses (...) problem when selecting tree nodes
 D  * Remove "Unchecked Boxes Hidden" button
 D  * Reorder view; directories first

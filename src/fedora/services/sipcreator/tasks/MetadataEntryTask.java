@@ -6,7 +6,6 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -23,14 +22,14 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import fedora.services.sipcreator.FileTreeNode;
+import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.SIPCreator;
-import fedora.services.sipcreator.SIPEntry;
-import fedora.services.sipcreator.SIPEntryPanel;
+import fedora.services.sipcreator.SelectableEntry;
+import fedora.services.sipcreator.SelectableEntryNode;
+import fedora.services.sipcreator.SelectableEntryPanel;
 import fedora.services.sipcreator.acceptor.FilterAcceptor;
 import fedora.services.sipcreator.acceptor.IntersectionAcceptor;
 import fedora.services.sipcreator.acceptor.SelectionAcceptor;
-import fedora.services.sipcreator.utility.GUIUtility;
 import fedora.services.sipcreator.utility.PopupListener;
 
 public class MetadataEntryTask extends JPanel {
@@ -57,7 +56,7 @@ public class MetadataEntryTask extends JPanel {
         parent = newParent;
         
         acceptor.getAcceptorList().add(filterAcceptor);
-        acceptor.getAcceptorList().add(new SelectionAcceptor(SIPEntry.FULLY_SELECTED | SIPEntry.PARTIALLY_SELECTED));
+        acceptor.getAcceptorList().add(new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED));
         
         metadataTreeDisplay.addMouseListener(eventHandler);
         metadataTreeDisplay.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -91,14 +90,14 @@ public class MetadataEntryTask extends JPanel {
     }
     
     
-    public void updateTree(String rootDirectoryName, SIPEntry newRoot) {
+    public void updateTree(String rootDirectoryName, SelectableEntry newRoot) {
         metadataDirectoryLabel.setText(rootDirectoryName);
         metadataDirectoryLabel.setToolTipText(rootDirectoryName);
-        metadataTreeModel.setRoot(new FileTreeNode(newRoot, null, acceptor));
+        metadataTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
     }
     
     public void refreshTree() {
-        metadataTreeModel.nodeStructureChanged((FileTreeNode)metadataTreeModel.getRoot());
+        metadataTreeModel.nodeStructureChanged((SelectableEntryNode)metadataTreeModel.getRoot());
     }
     
     
@@ -109,27 +108,20 @@ public class MetadataEntryTask extends JPanel {
             
             TreePath path = metadataTreeDisplay.getSelectionPath();
             if (path == null) return;
-            if (!(path.getLastPathComponent() instanceof FileTreeNode)) return;
-            FileTreeNode node = (FileTreeNode)path.getLastPathComponent();
-            
-            String canonicalPath = "";
-            try {
-                canonicalPath = node.getEntry().getFile().getCanonicalPath();
-            } catch (IOException ioe) {
-                GUIUtility.showExceptionDialog(parent, ioe);
-            }
+            if (!(path.getLastPathComponent() instanceof SelectableEntryNode)) return;
+            SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
             
             int index;
             JTabbedPane rightPanel = parent.getRightPanel();
             for (index = 0; index < rightPanel.getTabCount(); index++) {
-                if (rightPanel.getToolTipTextAt(index).equals(canonicalPath)) {
+                if (rightPanel.getToolTipTextAt(index).equals(node.getEntry().toString())) {
                     break;
                 }
             }
             
             if (index == rightPanel.getTabCount()) {
-                SIPEntryPanel listPanel = new SIPEntryPanel(node.getEntry(), parent);
-                rightPanel.addTab(node.toString(), null, listPanel, canonicalPath);
+                SelectableEntryPanel listPanel = new SelectableEntryPanel(node.getEntry(), parent);
+                rightPanel.addTab(node.toString(), null, listPanel, node.getEntry().toString());
                 rightPanel.setSelectedComponent(listPanel);
             } else {
                 rightPanel.setSelectedIndex(index);
