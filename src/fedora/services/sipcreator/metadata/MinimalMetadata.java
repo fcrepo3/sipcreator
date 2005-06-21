@@ -11,7 +11,7 @@ public class MinimalMetadata extends Metadata {
     private String xmlString;
     
     public MinimalMetadata() {
-        setName("Minimal Metadata");
+        setHint("Plain Text");
     }
     
     public MetadataPanel getPanel() {

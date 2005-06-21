@@ -4,14 +4,46 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public abstract class Metadata extends DefaultHandler {
 
-    private String name;
-    
-    public String getName() {
-        return name;
+    private static long currentID = 0;
+
+    public static synchronized long getNextID() {
+        return currentID++;
     }
     
-    public void setName(String newName) {
-        name = newName;
+    private String id = Long.toString(getNextID());
+    
+    private String label = new String();
+    
+    private String type = new String();
+    
+    private String hint = new String();
+    
+    public String getID() {
+        return id;
+    }
+    
+    public String getLabel() {
+        return label;
+    }
+    
+    public String getType() {
+        return type;
+    }
+    
+    public String getHint() {
+        return hint;
+    }
+    
+    public void setLabel(String newLabel) {
+        label = newLabel;
+    }
+    
+    public void setType(String newType) {
+        type = newType;
+    }
+    
+    public void setHint(String newHint) {
+        hint = newHint;
     }
     
     public abstract MetadataPanel getPanel();
@@ -21,7 +53,7 @@ public abstract class Metadata extends DefaultHandler {
     public boolean equals(Object o) {
         if (!(o instanceof Metadata)) return false;
         Metadata m = (Metadata)o;
-        return m.getName().equals(name);
+        return m.getID().equals(id);
     }
     
 }

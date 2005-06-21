@@ -113,7 +113,7 @@ public class SIPCreator extends JApplet {
     private JComponent createLeftPanel() {
         JTabbedPane leftPanel = new JTabbedPane();
         
-        leftPanel.addTab("File System", fileSelectTask);
+        leftPanel.addTab("File Selection", fileSelectTask);
         leftPanel.addTab("Metadata Entry", metadataEntryTask);
         leftPanel.addTab("Conversion Rules", conversionRulesTask);
         
@@ -196,37 +196,8 @@ public class SIPCreator extends JApplet {
     public Vector getKnownMetadataClassNames() {
         return knownMetadataClassNames;
     }
+        
     
-    
-//    private class ChangeUIAction extends AbstractAction {
-//    	
-//		private static final long serialVersionUID = 6434604639170194137L;
-//
-//        private String current = UIManager.getCrossPlatformLookAndFeelClassName();
-//		
-//		public ChangeUIAction() {
-//    		putValue(Action.NAME, "Change UI");
-//    		putValue(Action.SHORT_DESCRIPTION, "Toggles between Java and System look and feel");
-//    	}
-//    	
-//    	public void actionPerformed(ActionEvent ae) {
-//    		if (current.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
-//    			current = UIManager.getSystemLookAndFeelClassName();
-//    		} else {
-//    			current = UIManager.getCrossPlatformLookAndFeelClassName();
-//    		}
-//    		
-//			try {
-//				UIManager.setLookAndFeel(current);
-//	    		SwingUtilities.updateComponentTreeUI(SIPCreator.this);
-//                SwingUtilities.updateComponentTreeUI(fileChooser);
-//			} catch (Exception e) {
-//                GUIUtility.showExceptionDialog(SIPCreator.this, e);
-//			}
-//    	}
-//    	
-//    }
-//    
     private class CloseCurrentTabAction extends AbstractAction {
     	
 		private static final long serialVersionUID = -1317113261942287869L;
@@ -268,7 +239,6 @@ public class SIPCreator extends JApplet {
         
         private SelectionAcceptor acceptor = new SelectionAcceptor(SIPEntry.FULLY_SELECTED | SIPEntry.PARTIALLY_SELECTED);
         
-        //Tool for choosing files/directories
         private JFileChooser fileChooser = new JFileChooser(".");
         
 		public SaveSIPAction() {
@@ -329,7 +299,7 @@ public class SIPCreator extends JApplet {
             if (!entry.getFile().isDirectory()) {
                 handleFile(zos, name, entry.getFile());
                 handleFileData(fileMap, name, entry);
-                handleFileStructure(structMap, name, entry);
+                handleFileStructure(structMap,  entry);
                 return;
             }
             
@@ -342,16 +312,14 @@ public class SIPCreator extends JApplet {
                 walkTree(zos, fileMap, structMap, name, entry.getChildAt(ctr, acceptor));
             }
             
-            endDirectoryStructure(structMap, entry);
+            endDirectoryStructure(structMap);
         }
         
-        private void handleFileData(StringBuffer buffer, String name, SIPEntry entry) throws IOException {
+        private void handleFileData(StringBuffer buffer, String name, SIPEntry entry) {
             buffer.append("<METS:fileGrp><METS:fileGrp>");
             
-            String canonicalName = entry.getFile().getCanonicalPath();
-            
             buffer.append("<METS:file ID=\"");
-            buffer.append(canonicalName);
+            buffer.append(entry.getID());
             buffer.append("\" MIMETYPE=\"");
             buffer.append(entry.getMimeType());
             buffer.append("\">");
@@ -365,9 +333,7 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:file ID=\"");
-                buffer.append(canonicalName);
-                buffer.append("_");
-                buffer.append(metadata.getName());
+                buffer.append(metadata.getID());
                 buffer.append("\" MIMETYPE=\"text/xml\">");
                 buffer.append("<METS:FContent><METS:xmlData>");
                 buffer.append(metadata.getAsXML());
@@ -378,13 +344,14 @@ public class SIPCreator extends JApplet {
             buffer.append("</METS:fileGrp></METS:fileGrp>");
         }
         
-        private void handleFileStructure(StringBuffer buffer, String name, SIPEntry entry) throws IOException {
-            buffer.append("<METS:div LABEL=\"unsure\" TYPE=\"file\">");
+        private void handleFileStructure(StringBuffer buffer, SIPEntry entry) {
+            buffer.append("<METS:div LABEL=\"");
+            buffer.append(entry.getLabel());
+            buffer.append("\" TYPE=\"file\">");
             
-            String canonicalName = entry.getFile().getCanonicalPath();
             buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
             buffer.append("<METS:fptr FILEID=\"");
-            buffer.append(canonicalName);
+            buffer.append(entry.getID());
             buffer.append("\"/>");
             buffer.append("</METS:div>");
             
@@ -393,32 +360,31 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:div LABEL=\"");
-                buffer.append(metadata.getName());
-                buffer.append("\" TYPE=\"\">");
+                buffer.append(metadata.getLabel());
+                buffer.append("\" TYPE=\"");
+                buffer.append(metadata.getType());
+                buffer.append("\">");
+                
                 buffer.append("<METS:fptr FILEID=\"");
-                buffer.append(canonicalName);
-                buffer.append("_");
-                buffer.append(metadata.getName());
+                buffer.append(metadata.getID());
                 buffer.append("\"/>");
+                
                 buffer.append("</METS:div>");
             }
 
             buffer.append("</METS:div>");
         }
         
-        private void handleDirectoryData(StringBuffer buffer, SIPEntry entry) throws IOException {
+        private void handleDirectoryData(StringBuffer buffer, SIPEntry entry) {
             if (entry.getParent() == null) return; 
             buffer.append("<METS:fileGrp>");
             
             Vector metadataList = entry.getMetadata();
-            String canonicalName = entry.getFile().getCanonicalPath();
             for (int ctr = 0; ctr < metadataList.size(); ctr++) {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:file ID=\"");
-                buffer.append(canonicalName);
-                buffer.append("_");
-                buffer.append(metadata.getName());
+                buffer.append(metadata.getID());
                 buffer.append("\" MIMETYPE=\"text/xml\">");
                 buffer.append("<METS:FContent><METS:xmlData>");
                 buffer.append(metadata.getAsXML());
@@ -429,12 +395,11 @@ public class SIPCreator extends JApplet {
             buffer.append("</METS:fileGrp>");
         }
         
-        private void startDirectoryStructure(StringBuffer buffer, SIPEntry entry) throws IOException {
-            String canonicalName = entry.getFile().getCanonicalPath();
-            
+        private void startDirectoryStructure(StringBuffer buffer, SIPEntry entry) {
             buffer.append("<METS:div LABEL=\"");
-            buffer.append(canonicalName);
+            buffer.append(entry.getLabel());
             buffer.append("\" TYPE=\"folder\"");
+            
             if (entry.getParent() == null) {
                 buffer.append(" DMDID=\"DC\">");
             } else {
@@ -446,18 +411,16 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:div LABEL=\"");
-                buffer.append(metadata.getName());
+                buffer.append(metadata.getLabel());
                 buffer.append("\" TYPE=\"\">");
                 buffer.append("<METS:fptr FILEID=\"");
-                buffer.append(canonicalName);
-                buffer.append("_");
-                buffer.append(metadata.getName());
+                buffer.append(metadata.getID());
                 buffer.append("\"/>");
                 buffer.append("</METS:div>");
             }
         }
         
-        private void endDirectoryStructure(StringBuffer buffer, SIPEntry entry) {
+        private void endDirectoryStructure(StringBuffer buffer) {
             buffer.append("</METS:div>");
         } 
         
@@ -484,80 +447,6 @@ public class SIPCreator extends JApplet {
     	
     }
     
-//    private class AddNewMetadataAction extends AbstractAction {
-//    
-//        private static final long serialVersionUID = 3256728364034437681L;
-//
-//        private File lastDirectory = new File("."); 
-//        
-//        public AddNewMetadataAction() {
-//            putValue(Action.NAME, "Add New Metadata Format");
-//            putValue(Action.SHORT_DESCRIPTION, "Adds a new metadata format to the list");
-//        }
-//        
-//        public void actionPerformed(ActionEvent ae) {
-//            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//            fileChooser.setCurrentDirectory(lastDirectory);
-//            int choice = fileChooser.showOpenDialog(SIPCreator.this);
-//            lastDirectory = fileChooser.getCurrentDirectory();
-//            if (choice != JFileChooser.APPROVE_OPTION) return;
-//            
-//            try {
-//                File selectedFile = SIPCreator.this.fileChooser.getSelectedFile();
-//                
-//                URL url = new URL("file", "", selectedFile.getCanonicalPath() + "/");
-//                ClassLoader loader = new URLClassLoader(new URL[]{url}, ClassLoader.getSystemClassLoader());
-//                Vector addedClass = handleFile("", selectedFile, false, loader);
-//                JOptionPane.showMessageDialog(SIPCreator.this, "Added the following classes:\n" + addedClass);
-//            } catch (Exception e) {
-//                GUIUtility.showExceptionDialog(SIPCreator.this, e);
-//            }
-//        }
-//        
-//        private Vector handleFile(String packageName, File file, boolean addName, ClassLoader loader) {
-//            Vector result = new Vector();
-//            
-//            if (file.isDirectory()) {
-//                File[] fileList = file.listFiles();
-//                for (int ctr = 0; ctr < fileList.length; ctr++) {
-//                    if (addName) {
-//                        String newPackageName = packageName + file.getName() + ".";
-//                        result.addAll(handleFile(newPackageName, fileList[ctr], true, loader));
-//                    } else {
-//                        result.addAll(handleFile(packageName, fileList[ctr], true, loader));
-//                    }
-//                }
-//                return result;
-//            }
-//            
-//            if (!file.getName().endsWith(".class")) return result;
-//            String className = packageName + file.getName().substring(0, file.getName().lastIndexOf('.'));
-//            Class loadedClass = null;
-//            try {
-//                loadedClass = loader.loadClass(className);
-//            } catch (ClassNotFoundException cnfe) {
-//                return result;
-//            }
-//            
-//            if (loadedClass.isInterface()) return result;
-//            if (!Metadata.class.isAssignableFrom(loadedClass)) return result;
-//            
-//            result.add(loadedClass);
-//            knownMetadataClasses.add(loadedClass);
-//            return result;
-//        }
-//        
-//    }
-//
-//
-//    public AddNewMetadataAction getAddNewMetadataAction() {
-//        return addNewMetadataAction;
-//    }
-//
-//    public ChangeUIAction getChangeUIAction() {
-//        return changeUIAction;
-//    }
-//    
     public CloseCurrentTabAction getCloseCurrentTabAction() {
         return closeCurrentTabAction;
     }
@@ -567,3 +456,107 @@ public class SIPCreator extends JApplet {
     }
     
 }
+
+//private class ChangeUIAction extends AbstractAction {
+//
+//private static final long serialVersionUID = 6434604639170194137L;
+//
+//private String current = UIManager.getCrossPlatformLookAndFeelClassName();
+//
+//public ChangeUIAction() {
+//  putValue(Action.NAME, "Change UI");
+//  putValue(Action.SHORT_DESCRIPTION, "Toggles between Java and System look and feel");
+//}
+//
+//public void actionPerformed(ActionEvent ae) {
+//  if (current.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
+//      current = UIManager.getSystemLookAndFeelClassName();
+//  } else {
+//      current = UIManager.getCrossPlatformLookAndFeelClassName();
+//  }
+//  
+//  try {
+//      UIManager.setLookAndFeel(current);
+//      SwingUtilities.updateComponentTreeUI(SIPCreator.this);
+//        SwingUtilities.updateComponentTreeUI(fileChooser);
+//  } catch (Exception e) {
+//        GUIUtility.showExceptionDialog(SIPCreator.this, e);
+//  }
+//}
+//
+//}
+//
+//private class AddNewMetadataAction extends AbstractAction {
+//
+//    private static final long serialVersionUID = 3256728364034437681L;
+//
+//    private File lastDirectory = new File("."); 
+//    
+//    public AddNewMetadataAction() {
+//        putValue(Action.NAME, "Add New Metadata Format");
+//        putValue(Action.SHORT_DESCRIPTION, "Adds a new metadata format to the list");
+//    }
+//    
+//    public void actionPerformed(ActionEvent ae) {
+//        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+//        fileChooser.setCurrentDirectory(lastDirectory);
+//        int choice = fileChooser.showOpenDialog(SIPCreator.this);
+//        lastDirectory = fileChooser.getCurrentDirectory();
+//        if (choice != JFileChooser.APPROVE_OPTION) return;
+//        
+//        try {
+//            File selectedFile = SIPCreator.this.fileChooser.getSelectedFile();
+//            
+//            URL url = new URL("file", "", selectedFile.getCanonicalPath() + "/");
+//            ClassLoader loader = new URLClassLoader(new URL[]{url}, ClassLoader.getSystemClassLoader());
+//            Vector addedClass = handleFile("", selectedFile, false, loader);
+//            JOptionPane.showMessageDialog(SIPCreator.this, "Added the following classes:\n" + addedClass);
+//        } catch (Exception e) {
+//            GUIUtility.showExceptionDialog(SIPCreator.this, e);
+//        }
+//    }
+//    
+//    private Vector handleFile(String packageName, File file, boolean addName, ClassLoader loader) {
+//        Vector result = new Vector();
+//        
+//        if (file.isDirectory()) {
+//            File[] fileList = file.listFiles();
+//            for (int ctr = 0; ctr < fileList.length; ctr++) {
+//                if (addName) {
+//                    String newPackageName = packageName + file.getName() + ".";
+//                    result.addAll(handleFile(newPackageName, fileList[ctr], true, loader));
+//                } else {
+//                    result.addAll(handleFile(packageName, fileList[ctr], true, loader));
+//                }
+//            }
+//            return result;
+//        }
+//        
+//        if (!file.getName().endsWith(".class")) return result;
+//        String className = packageName + file.getName().substring(0, file.getName().lastIndexOf('.'));
+//        Class loadedClass = null;
+//        try {
+//            loadedClass = loader.loadClass(className);
+//        } catch (ClassNotFoundException cnfe) {
+//            return result;
+//        }
+//        
+//        if (loadedClass.isInterface()) return result;
+//        if (!Metadata.class.isAssignableFrom(loadedClass)) return result;
+//        
+//        result.add(loadedClass);
+//        knownMetadataClasses.add(loadedClass);
+//        return result;
+//    }
+//    
+//}
+//
+//
+//public AddNewMetadataAction getAddNewMetadataAction() {
+//    return addNewMetadataAction;
+//}
+//
+//public ChangeUIAction getChangeUIAction() {
+//    return changeUIAction;
+//}
+//

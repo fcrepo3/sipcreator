@@ -63,7 +63,7 @@ public class DCFields extends Metadata {
     private StringBuffer currentContent;
 
     public DCFields() {
-        setName("Dublin Core");
+        setHint("Dublin Core");
     }
 
     public DCFields(InputStream in)
@@ -73,7 +73,7 @@ public class DCFields extends Metadata {
         SAXParser parser = spf.newSAXParser();
 
         parser.parse(in, this);
-        setName("Dublin Core");
+        setHint("Dublin Core");
     }
 
     public void startElement(String uri, String localName, String qName, Attributes attrs) {
@@ -286,6 +286,9 @@ public class DCFields extends Metadata {
         
         
         public void updateFromMetadata() {
+            while (dcDataModel.getRowCount() > 0) {
+                dcDataModel.removeRow(0);
+            }
             updateTableField(DC_TYPES[ 0], metadata.titles());
             updateTableField(DC_TYPES[ 1], metadata.creators());
             updateTableField(DC_TYPES[ 2], metadata.subjects());

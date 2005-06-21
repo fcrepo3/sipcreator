@@ -5,60 +5,82 @@ D? = I think its done, but it might not be done right
 Dx = Undone
 
    General GUI:
+   * Make GUI pretty
+     * Use icons rather than text
+     * Get some decent icons
+   * Find a nice way to display actions available
+D  * Make Hideable panels optionally resizeable
+D  * Changed "File System" to "File Select"
 D  * Button to switch UI Look and Feels
 D  * Toolbar at top
 D  * All extra space goes to right hand pane
-   * Find a nice way to display actions available
 De * Fix up the "hide unchecked files" button
 Dx   * Remove focus box
-     * Use images, not text
 D? * Use tooltips
 D  * Use min/max buttons as show/hide metaphor in HideablePanel
 D  * Use a special panel as the grip to resize HideablePanel objects
-   * Get some decent icons
 D  * Left tabs = tasks
 D  * Remove "load crules" buttons from toolbar
 
    General System:
    * Remove cruft libraries.  Log4j?
-De * Save file's metadata beyond directory switching?
-D    * At least show a warning dialog when switching directories
-D  * Close all metadata tabs when switching
-D  * Saving of SIP file
-     * How to get the "type" in the structMap section of the METS file
+   * Saving of SIP file
+D    * How to get the "type" in the structMap section of the METS file
+       - Type field explicity part of Metadata class now
      * What to do about unknown mime types?
+     * Should there be a human readable relationship between file id's and their
+       component metadata id's?
+     * Fix the header creation
+     * How do we attach multiple metadata records to the root of the tree?
    * Loading of a SIP file
    * MIME Type detection
-D    * Integrated jMimeMagic
-     * Determine it's correctness/edit Magic.xml
-     * Evaluate other tools?
-       * JAF from Sun
-       * Link from Sandy
+     * Use all 3?  Give the user the power to switch?
+D    * Integrate jMimeMagic
+       * Edit Magic.xml
+       * Evaluate usefulness
+     * Integrate JAF from Sun
+       * Evaluate usefulness
+     * Tool linked from Sandy
+       * Evaluate usefulnes
    * Integrate JHove
    * Make sure that the different "task" views all update the same data, and
      propagate the changes from the data to all of the non-current views
 D    * Between File System and Metadata tasks
        * Do a more intelligent model update, than "structure changed" on root...
+De * Save file's metadata beyond directory switching?
+D    * At least show a warning dialog when switching directories
+D  * Close all metadata tabs when switching
 
    File Selection Task:
+   * Bug: Collapsing a branch that causes a scroll event also causes a selection event
+   * Allow web directories too
 D  * Find a way to hide unselected files
 D  * Integrate Filtering
 D  * Fix ellipses (...) problem when selecting tree nodes
-   * Allow web directories too
 D  * Remove "Unchecked Boxes Hidden" button
 D  * Reorder view; directories first
 D  * Make sure to deselect all nodes
 D  * Lazy tree evaluation
-     * Alternate: threaded loading approach (still need lazy for web dirs)
-   Bug: Collapsing a branch that causes a scroll event also causes a selection event
+De   * Alternate: threaded loading approach (still need lazy for web dirs)
 
 
    Filtering Subtask:
 D  * Inclusion/Exclusion patterns for mass (de)selection of files
 Dx * Using a dialog
 D  * Using a real regex language
+D  * Escape . to mean \. and * to mean .*
 
    Metadata Entry Task:
+   * Develop automatic generation of metadata
+     * Based on location in hierarchy?
+     * Based on Parent's metadata?
+     * Based on System aspects? (time, etc)
+     * Based on global values (always use the same creator, etc)
+D  * Use hideable panels
+D  * Change tab wrap style to scroll
+D  * Just use hints for metadata tabs
+D  * Use METS ID safe strings (no ":", " ", and limit length to 64)
+     - Used unique number (unique across JVM)
 D  * Integrate Filtering
 D  * Present nicer view of available metadata formats
 D  * UI Widget for editing metadata names
@@ -70,19 +92,8 @@ D    * Use pull down boxes for first field of DC Table
 D    * Sorting within table
 D    * Primitive way of "saving" table data into the actual DCFields instance
 D  * Develop generic metadata API so that new formats can be "dropped in"
-   * Develop automatic generation of metadata
-     * Based on location in hierarchy?
-     * Based on Parent's metadata?
-     * Based on System aspects? (time, etc)
-     * Based on global values (always use the same creator, etc)
 
    CRules Task:
-D  * Allow for files on web, not just local files
-D  * Refix annoying start sizes for CRules HideablePanels
-D  * Merge Datastream/Object template panels
-D  * Position relationship list at bottom right of DOT panel
-D  * Import it
-D  * Slightly confusing/inaccurate way of representing primitiveRels
    * Allow for a way to check relationships of two nodes
    * Allow for propogation of new rules back into XML file
      * Based on Node name?
@@ -94,3 +105,10 @@ D  * Slightly confusing/inaccurate way of representing primitiveRels
      * Chains of currently used relationships?
      * Subset of XPath?
      * New language?
+D  * Allow for new datastream templates to be created (visible in metadata entry task)
+D  * Allow for files on web, not just local files
+D  * Refix annoying start sizes for CRules HideablePanels
+D  * Merge Datastream/Object template panels
+D  * Position relationship list at bottom right of DOT panel
+D  * Import it
+D  * Slightly confusing/inaccurate way of representing primitiveRels     

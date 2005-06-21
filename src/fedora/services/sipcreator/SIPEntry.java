@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Vector;
 
 import fedora.services.sipcreator.acceptor.SIPEntryAcceptor;
+import fedora.services.sipcreator.metadata.Metadata;
 
 public class SIPEntry {
 
@@ -40,9 +41,13 @@ public class SIPEntry {
     
     public static final int FULLY_SELECTED = 4;
     
+    private String id = Long.toString(Metadata.getNextID());
+    
     private Vector metadataList = new Vector();
     
-    private String mimeType;
+    private String mimeType = new String();
+    
+    private String label = new String();
     
     private File file;
     
@@ -82,6 +87,14 @@ public class SIPEntry {
     }
     
     
+    public String getLabel() {
+        return label;
+    }
+    
+    public String getID() {
+        return id;
+    }
+    
     public SIPEntry getParent() {
         return parentEntry;
     }
@@ -101,6 +114,10 @@ public class SIPEntry {
     
     public void setMimeType(String newMimeType) {
         mimeType = newMimeType;
+    }
+    
+    public void setLabel(String newLabel) {
+        label = newLabel;
     }
     
     

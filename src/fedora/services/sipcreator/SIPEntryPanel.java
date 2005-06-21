@@ -20,12 +20,16 @@ import javax.swing.JTextField;
 import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.metadata.MetadataPanel;
 import fedora.services.sipcreator.utility.GUIUtility;
+import fedora.services.sipcreator.utility.HideablePanel;
 
 public class SIPEntryPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 4049918281383228216L;
 
-    private JTextField mimeTypeBox = new JTextField(15);
+    
+    private JTextField mimeTypeField = new JTextField(10);
+    
+    private JTextField labelField = new JTextField(10);
     
     private JComboBox classBox;
     
@@ -35,12 +39,15 @@ public class SIPEntryPanel extends JPanel implements ActionListener {
     
     private SIPCreator creator;
     
+    
     public SIPEntryPanel(SIPEntry newEntry, SIPCreator newCreator) {
         super(new BorderLayout(5, 5));
 
         entry = newEntry;
         creator = newCreator;
         classBox = new JComboBox(creator.getKnownMetadataClassNames());
+        
+        metadataPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         
         add(createNorthPanel(), BorderLayout.NORTH);
         add(metadataPane, BorderLayout.CENTER);
@@ -69,22 +76,32 @@ public class SIPEntryPanel extends JPanel implements ActionListener {
         button.addActionListener(this);
         tempP1.add(button);
         
-        result.add(tempP1);
-        
-        
-        tempP1 = Box.createHorizontalBox();
+        tempP1.add(Box.createHorizontalStrut(5));
+
         button = new JButton("Rename Tab");
         button.addActionListener(this);
         tempP1.add(button);
         
+        result.add(tempP1);
+        
+        
+        tempP1 = Box.createHorizontalBox();
+        
+        tempP1.add(GUIUtility.addLabelLeft("Mime Type: ", mimeTypeField));
+        
         tempP1.add(Box.createHorizontalStrut(5));
         
-        tempP1.add(GUIUtility.addLabelLeft("Mime Type: ", mimeTypeBox));
-        result.add(tempP1);
+        tempP1.add(GUIUtility.addLabelLeft("Label: ", labelField));
 
+        result.add(tempP1);
         
-        return result;
+        HideablePanel hPanel = new HideablePanel(result, "Edit Metadata Options");
+        hPanel.setResizeable(false);
+        hPanel.setBorder(null);
+        
+        return hPanel;
     }
+    
     
     public void actionPerformed(ActionEvent ae) {
         String cmd = ae.getActionCommand();
@@ -111,16 +128,9 @@ public class SIPEntryPanel extends JPanel implements ActionListener {
             Constructor constructor = selectedClass.getConstructor(null);
             Metadata newMetadata = (Metadata)constructor.newInstance(null);
             
-            while (entry.getMetadata().contains(newMetadata)) {
-                String result = JOptionPane.showInputDialog
-                (this, "Tab name conflict, please enter the new tab's name", newMetadata.getName());
-                if (result == null || result.length() == 0) return;
-                newMetadata.setName(result);
-            }
-            
             entry.getMetadata().add(newMetadata);
-            MetadataPanel panel = newMetadata.getPanel();
-            metadataPane.addTab(newMetadata.getName(), panel);
+            MetadataPanelWrapper panel = new MetadataPanelWrapper(newMetadata.getPanel());
+            metadataPane.addTab(newMetadata.getHint(), panel);
             metadataPane.setSelectedComponent(panel);
         } catch (Exception e) {
             GUIUtility.showExceptionDialog(this, e);
@@ -128,7 +138,7 @@ public class SIPEntryPanel extends JPanel implements ActionListener {
     }
     
     private void removeMetadataAction(int index) {
-        MetadataPanel panel = (MetadataPanel)metadataPane.getComponentAt(index);
+        MetadataPanelWrapper panel = (MetadataPanelWrapper)metadataPane.getComponentAt(index);
         metadataPane.remove(index);
         entry.getMetadata().remove(panel.getMetadata());
     }
@@ -139,28 +149,129 @@ public class SIPEntryPanel extends JPanel implements ActionListener {
         
         if (result == null || result.length() == 0) return;
         
-        MetadataPanel panel = (MetadataPanel)metadataPane.getComponentAt(index);
-        panel.getMetadata().setName(result);
+        MetadataPanelWrapper panel = (MetadataPanelWrapper)metadataPane.getComponentAt(index);
+        panel.getMetadata().setHint(result);
         metadataPane.setTitleAt(index, result);
     }
     
+    
     public void updateFromMetadata() {
+        while (metadataPane.getTabCount() > 0) {
+            metadataPane.remove(0);
+        }
+        
         Vector metadataList = entry.getMetadata();
-        mimeTypeBox.setText(entry.getMimeType());
+        mimeTypeField.setText(entry.getMimeType());
+        labelField.setText(entry.getLabel());
         
         for (int ctr = 0; ctr < metadataList.size(); ctr++) {
             Metadata metadata = (Metadata)metadataList.get(ctr);
-            metadataPane.addTab(metadata.getName(), metadata.getPanel());
+            metadataPane.addTab(metadata.getHint(), new MetadataPanelWrapper(metadata.getPanel()));
         }
     }
     
     public void updateMetadata() {
-        entry.setMimeType(mimeTypeBox.getText());
+        entry.setMimeType(mimeTypeField.getText());
+        entry.setLabel(labelField.getText());
         for (int ctr = 0; ctr < metadataPane.getTabCount(); ctr++) {
-            MetadataPanel mp = (MetadataPanel)metadataPane.getComponentAt(ctr);
-            mp.updateMetadata();
-            mp.getMetadata().setName(metadataPane.getTitleAt(ctr));
+            MetadataPanelWrapper mpw = (MetadataPanelWrapper)metadataPane.getComponentAt(ctr);
+            mpw.updateMetadata();
         }
+    }
+    
+    
+    private class MetadataPanelWrapper extends JPanel implements ActionListener {
+    
+        private static final long serialVersionUID = 3257002172494263094L;
+
+        private MetadataPanel metadataPanel;
+        
+        private JTextField labelField = new JTextField();
+        
+        private JComboBox typeBox = new JComboBox(creator.getConversionRulesTask().getRules().datastreamTemplateList);
+        
+        private JTextField nameField = new JTextField();
+        
+        public MetadataPanelWrapper(MetadataPanel newMetadataPanel) {
+            super(new BorderLayout());
+            
+            metadataPanel = newMetadataPanel;
+            
+            JPanel temp = new JPanel(new GridLayout(3, 1, 5, 5));
+            temp.add(GUIUtility.addLabelLeft("Label: ", labelField));
+            temp.add(GUIUtility.addLabelLeft("Type: ", typeBox));
+            temp.add(GUIUtility.addLabelLeft("ID: ", nameField));
+            
+            HideablePanel htemp = new HideablePanel(temp, "Common Metadata Attributes");
+            htemp.setResizeable(false);
+            htemp.setBorder(null);
+            add(htemp, BorderLayout.NORTH);
+            add(metadataPanel, BorderLayout.CENTER);
+            
+            updateFromMetadata();
+            
+            labelField.addActionListener(this);
+            typeBox.addActionListener(this);
+            typeBox.setEditable(true);
+            nameField.setEnabled(false);
+        }
+        
+        
+        public MetadataPanel getMetadataPanel() {
+            return metadataPanel;
+        }
+        
+        public Metadata getMetadata() {
+            return metadataPanel.getMetadata();
+        }
+        
+        
+        public void actionPerformed(ActionEvent ae) {
+            if (ae.getSource() == typeBox && typeBox.getSelectedIndex() == -1) {
+                int choice = JOptionPane.showConfirmDialog(creator,
+                        "Would you like to add this as a new datastream template?",
+                        "Add New Template", JOptionPane.YES_NO_OPTION);
+                if (choice != JOptionPane.YES_OPTION) {
+                    updateFromMetadata();
+                    return;
+                }
+                
+                ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate();
+                newDT.nodeType = typeBox.getSelectedItem().toString();
+                creator.getConversionRulesTask().getRules().datastreamTemplateList.add(newDT);
+                typeBox.setSelectedItem(newDT);
+            }
+            updateMetadata();
+        }
+        
+        
+        public void updateFromMetadata() {
+            ConversionRules rules = creator.getConversionRulesTask().getRules();
+            Object template = rules.getDatastreamTemplate(metadataPanel.getMetadata().getType());
+            if (template != null) {
+                typeBox.setSelectedItem(template);
+            } else {
+                typeBox.setSelectedItem(metadataPanel.getMetadata().getType());
+            }
+            
+            labelField.setText(metadataPanel.getMetadata().getLabel());
+            nameField.setText(metadataPanel.getMetadata().getID());
+            
+            metadataPanel.updateFromMetadata();
+        }
+        
+        public void updateMetadata() {
+            getMetadata().setLabel(labelField.getText());
+            
+            if (typeBox.getSelectedItem() != null) {
+                getMetadata().setType(typeBox.getSelectedItem().toString());
+            } else {
+                getMetadata().setType("");
+            }
+            
+            metadataPanel.updateMetadata();
+        }
+        
     }
     
 }

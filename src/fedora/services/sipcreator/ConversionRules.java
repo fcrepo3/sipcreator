@@ -8,7 +8,7 @@ import org.w3c.dom.NodeList;
 
 public class ConversionRules {
 
-    public String description;
+    public String description = "";
     
     public final Vector namespaceList = new Vector();
     
@@ -39,7 +39,17 @@ public class ConversionRules {
         public final Vector attributeValueList = new Vector();
         
         public String toString() {
-            return "DT, " + nodeType;
+            return nodeType;
+        }
+        
+        public boolean equals(Object o) {
+            if (o instanceof DatastreamTemplate) {
+                return o == this;
+            }
+            if (o instanceof String) {
+                return nodeType.equals(o);
+            }
+            return false;
         }
         
     }
@@ -49,7 +59,7 @@ public class ConversionRules {
         public final Vector relationshipList = new Vector();
         
         public String toString() {
-            return "OT, " + nodeType;
+            return nodeType;
         }
         
     }
@@ -116,6 +126,9 @@ public class ConversionRules {
         return toReturn;
     }
     
+    public ConversionRules() {
+    }
+    
     public ConversionRules(Document input) {
         Element conversionRulesElement =
             (Element)input.getElementsByTagName("conversionRules").item(0);
@@ -136,6 +149,24 @@ public class ConversionRules {
         }
     }
 
+    public DatastreamTemplate getDatastreamTemplate(String nodeType) {
+        for (int ctr = 0; ctr < datastreamTemplateList.size(); ctr++) {
+            if (datastreamTemplateList.get(ctr).toString().equals(nodeType)) {
+                return (DatastreamTemplate)datastreamTemplateList.get(ctr);
+            }
+        }
+        return null;
+    }
+    
+    public ObjectTemplate getObjectTemplate(String nodeType) {
+        for (int ctr = 0; ctr < objectTemplateList.size(); ctr++) {
+            if (objectTemplateList.get(ctr).toString().equals(nodeType)) {
+                return (ObjectTemplate)objectTemplateList.get(ctr);
+            }
+        }
+        return null;
+    }
+    
     private Namespace handleNamespace(Element node, Namespace namespace) {
     	if (namespace == null) {
     		namespace = new Namespace();

@@ -67,11 +67,12 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     private JTable namespaceTableDisplay;
     private SemiEditableTableModel namespaceTableModel;
     
-    private JList objectListDisplay;
-    private DefaultListModel objectListModel = new DefaultListModel();
-    private JTextArea objectDescriptionArea = new JTextArea();
-    private JTable objectAttributeTableDisplay;
-    private SemiEditableTableModel objectAttributeTableModel;
+    private JList templateListDisplay;
+    private DefaultListModel templateListModel = new DefaultListModel();
+    private JLabel templateTypeLabel = new JLabel();
+    private JTextArea templateDescriptionArea = new JTextArea();
+    private JTable templateAttributeTableDisplay;
+    private SemiEditableTableModel templateAttributeTableModel;
     private JList relationshipListDisplay;
     private DefaultListModel relationshipListModel = new DefaultListModel();
     private JTable relationshipTargetTableDisplay;
@@ -82,6 +83,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     public ConversionRulesTask(SIPCreator newParent) {
         parent = newParent;
+        rules = new ConversionRules();
         
         //Instantiate the XML Parser
         try {
@@ -108,19 +110,21 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         namespaceTableDisplay.setRowSelectionAllowed(true);
         namespaceTableDisplay.setPreferredScrollableViewportSize(DEFAULT_VIEWPORT_SIZE);
         
-        objectListDisplay = new JList(objectListModel);
-        objectListDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        objectListDisplay.addListSelectionListener(this);
+        templateListDisplay = new JList(templateListModel);
+        templateListDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        templateListDisplay.addListSelectionListener(this);
         
-        objectDescriptionArea.setBackground(getBackground());
-        objectDescriptionArea.setEditable(false);
+        templateDescriptionArea.setBackground(getBackground());
+        templateDescriptionArea.setEditable(false);
+        templateDescriptionArea.setLineWrap(true);
+        templateDescriptionArea.setWrapStyleWord(true);
         
-        objectAttributeTableModel = new SemiEditableTableModel(new Object[]{"name", "value"}, 0, new int[]{});
-        objectAttributeTableDisplay = new JTable(objectAttributeTableModel);
-        objectAttributeTableDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        objectAttributeTableDisplay.setCellSelectionEnabled(false);
-        objectAttributeTableDisplay.setRowSelectionAllowed(true);
-        objectAttributeTableDisplay.setPreferredScrollableViewportSize(DEFAULT_VIEWPORT_SIZE);
+        templateAttributeTableModel = new SemiEditableTableModel(new Object[]{"name", "value"}, 0, new int[]{});
+        templateAttributeTableDisplay = new JTable(templateAttributeTableModel);
+        templateAttributeTableDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        templateAttributeTableDisplay.setCellSelectionEnabled(false);
+        templateAttributeTableDisplay.setRowSelectionAllowed(true);
+        templateAttributeTableDisplay.setPreferredScrollableViewportSize(DEFAULT_VIEWPORT_SIZE);
         
         relationshipListDisplay = new JList(relationshipListModel);
         relationshipListDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -154,15 +158,15 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         Box tempP1 = Box.createVerticalBox();
         
         tempP2 = new HideablePanel(createScrollPane(descriptionArea));
-        tempP2.setName("Description");
+        tempP2.setTitle("Description");
         tempP1.add(tempP2); tempP1.add(Box.createVerticalStrut(5));
         
         tempP2 = new HideablePanel(createScrollPane(namespaceTableDisplay));
-        tempP2.setName("Namespaces");
+        tempP2.setTitle("Namespaces");
         tempP1.add(tempP2); tempP1.add(Box.createVerticalStrut(5));
 
         tempP2 = new HideablePanel(getObjectComponent());
-        tempP2.setName("Object Templates");
+        tempP2.setTitle("Templates");
         tempP1.add(tempP2);
         
         ScrollingPanel scrollingPanel = new ScrollingPanel(new BorderLayout());
@@ -188,19 +192,19 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         JPanel tempP;
         
         JPanel topLeft = new JPanel(new BorderLayout());
-        topLeft.add(new JLabel("Object Elements"), BorderLayout.NORTH);
-        topLeft.add(createScrollPane(objectListDisplay), BorderLayout.CENTER);
+        topLeft.add(new JLabel("Elements"), BorderLayout.NORTH);
+        topLeft.add(createScrollPane(templateListDisplay), BorderLayout.CENTER);
         topLeft.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         JSplitPane topRight = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         tempP = new JPanel(new BorderLayout());
-        tempP.add(new JLabel("Object Description"), BorderLayout.NORTH);
-        tempP.add(createScrollPane(objectDescriptionArea), BorderLayout.CENTER);
+        tempP.add(new JLabel("Description"), BorderLayout.NORTH);
+        tempP.add(createScrollPane(templateDescriptionArea), BorderLayout.CENTER);
         tempP.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         topRight.setLeftComponent(tempP); tempP = null;
         tempP = new JPanel(new BorderLayout());
-        tempP.add(new JLabel("Object Attributes"), BorderLayout.NORTH);
-        tempP.add(createScrollPane(objectAttributeTableDisplay), BorderLayout.CENTER);
+        tempP.add(new JLabel("Attributes"), BorderLayout.NORTH);
+        tempP.add(createScrollPane(templateAttributeTableDisplay), BorderLayout.CENTER);
         tempP.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         topRight.setRightComponent(tempP); tempP = null;
         topRight.setResizeWeight(0.5);
@@ -232,8 +236,12 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         result2.setOneTouchExpandable(true);
         result2.setBorder(null);
         
+        tempP = new JPanel(new BorderLayout());
+        tempP.add(GUIUtility.addLabelLeft("Template Type:  ", templateTypeLabel), BorderLayout.NORTH);
+        tempP.add(result2, BorderLayout.CENTER);
+        
         result1.setLeftComponent(topLeft);
-        result1.setRightComponent(result2);
+        result1.setRightComponent(tempP);
         result2.setLeftComponent(topRight);
         result2.setRightComponent(bottom);
         return result1;
@@ -247,12 +255,13 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     
     public void updateRules(String sourceName, ConversionRules newRules) {
+        rules = newRules;
         crulesLabel.setText(sourceName);
         descriptionArea.setText(newRules.description);
         
         while (namespaceTableModel.getRowCount() > 0) namespaceTableModel.removeRow(0);
         //datastreamListModel.clear();
-        objectListModel.clear();
+        templateListModel.clear();
         
         for (int ctr = 0; ctr < newRules.namespaceList.size(); ctr++) {
             ConversionRules.Namespace namespace =
@@ -262,11 +271,11 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         
         for (int ctr = 0; ctr < newRules.datastreamTemplateList.size(); ctr++) {
             //datastreamListModel.addElement(newRules.datastreamTemplateList.get(ctr));
-            objectListModel.addElement(newRules.datastreamTemplateList.get(ctr));
+            templateListModel.addElement(newRules.datastreamTemplateList.get(ctr));
         }
         
         for (int ctr = 0; ctr < newRules.objectTemplateList.size(); ctr++) {
-            objectListModel.addElement(newRules.objectTemplateList.get(ctr));
+            templateListModel.addElement(newRules.objectTemplateList.get(ctr));
         }
     }
     
@@ -297,34 +306,38 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
     
     public void valueChanged(ListSelectionEvent e) {
-        if (e.getSource() == objectListDisplay) {
-            Object selected = objectListDisplay.getSelectedValue();
+        if (e.getSource() == templateListDisplay) {
+            templateTypeLabel.setText("");
+            relationshipListModel.clear();
+            while (relationshipTargetTableModel.getRowCount() > 0) {
+                relationshipTargetTableModel.removeRow(0);
+            }
+            while (templateAttributeTableModel.getRowCount() > 0) {
+                templateAttributeTableModel.removeRow(0);
+            }
+            
+            Object selected = templateListDisplay.getSelectedValue();
             if (selected == null) return;
             
             if (!(selected instanceof ConversionRules.DatastreamTemplate)) return;
             ConversionRules.DatastreamTemplate casted = (ConversionRules.DatastreamTemplate)selected;
             
-            relationshipListModel.clear();
-            while (relationshipTargetTableModel.getRowCount() > 0) {
-                relationshipTargetTableModel.removeRow(0);
-            }
-            while (objectAttributeTableModel.getRowCount() > 0) {
-                objectAttributeTableModel.removeRow(0);
-            }
-            
-            objectDescriptionArea.setText(casted.description);
+            templateDescriptionArea.setText(casted.description);
             for (int ctr = 0; ctr < casted.attributeNameList.size(); ctr++) {
-                objectAttributeTableModel.addRow
+                templateAttributeTableModel.addRow
                 (new Object[]{casted.attributeNameList.get(ctr),
                               casted.attributeValueList.get(ctr)});
             }
             
             if (selected instanceof ConversionRules.ObjectTemplate) {
+                templateTypeLabel.setText("Object Template");
                 ConversionRules.ObjectTemplate casted2 = (ConversionRules.ObjectTemplate)selected;
                 
                 for (int ctr = 0; ctr < casted2.relationshipList.size(); ctr++) {
                     relationshipListModel.addElement(casted2.relationshipList.get(ctr));
                 }
+            } else {
+                templateTypeLabel.setText("Datastream Template");
             }
         } else if (e.getSource() == relationshipListDisplay) {
             ConversionRules.Relationship selected =

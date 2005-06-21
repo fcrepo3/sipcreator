@@ -23,26 +23,35 @@ public class HideablePanel extends JPanel {
 
     private EventHandler handler = new EventHandler();
     
-    private JPanel centerPanel;
+    private boolean resizeable = true;
+    
+    private JPanel centerPanel = new JPanel(new BorderLayout());
     
     private JComponent component;
     
-    private JLabel nameLabel;
+    private JLabel titleLabel = new JLabel();
     
-    private JComponent grippablePanel;
+    private JComponent grippablePanel = (JComponent)Box.createVerticalStrut(5);
     
     public HideablePanel(JComponent c) {
-        this(c, true);
+        this(c, "", true);
     }
 
     public HideablePanel(JComponent c, boolean isDoubleBuffered) {
-        super(isDoubleBuffered);
+        this(c, "", isDoubleBuffered);
+    }
+    
+    public HideablePanel(JComponent c, String title) {
+        this(c, title, true);
+    }
+    
+    public HideablePanel(JComponent c, String title, boolean isDoubleBuffered) {
+        super(new BorderLayout(), isDoubleBuffered);
         
         component = c;
         
-        nameLabel = new JLabel();
+        titleLabel.setText(title);
         
-        grippablePanel = (JComponent)Box.createVerticalStrut(5);
         grippablePanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
         grippablePanel.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
         
@@ -50,7 +59,7 @@ public class HideablePanel extends JPanel {
         expandButton.addActionListener(handler);
         
         JPanel tempNorthPanel = new JPanel(new BorderLayout());
-        tempNorthPanel.add(nameLabel, BorderLayout.WEST);
+        tempNorthPanel.add(titleLabel, BorderLayout.WEST);
         tempNorthPanel.add(new JPanel(), BorderLayout.CENTER);
         tempNorthPanel.add(expandButton, BorderLayout.EAST);
         tempNorthPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -59,11 +68,9 @@ public class HideablePanel extends JPanel {
         tempCenterPanel.add(component, BorderLayout.CENTER);
         tempCenterPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
         
-        centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(grippablePanel, BorderLayout.SOUTH);
         centerPanel.add(tempCenterPanel, BorderLayout.CENTER);
         
-        setLayout(new BorderLayout());
         add(tempNorthPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
         setBorder(BorderFactory.createLineBorder(Color.black));
@@ -72,12 +79,25 @@ public class HideablePanel extends JPanel {
         addMouseMotionListener(handler);
     }
     
-    public void setName(String newName) {
-        nameLabel.setText(newName);
+    public boolean isResizeable() {
+        return resizeable;
     }
     
-    public String getName() {
-        return nameLabel.getText();
+    public void setResizeable(boolean newResizeable) {
+        resizeable = newResizeable;
+        if (resizeable) {
+            centerPanel.add(grippablePanel, BorderLayout.SOUTH);
+        } else {
+            centerPanel.remove(grippablePanel);
+        }
+    }
+    
+    public void setTitle(String newTitle) {
+        titleLabel.setText(newTitle);
+    }
+    
+    public String getTitle() {
+        return titleLabel.getText();
     }
     
     private class EventHandler extends MouseAdapter implements ActionListener, MouseMotionListener {
@@ -116,7 +136,7 @@ public class HideablePanel extends JPanel {
         }
 
         public void mouseDragged(MouseEvent me) {
-            if (!dragValid) return;
+            if (!dragValid || !resizeable) return;
             Dimension size = component.getPreferredSize();
             size.height = Math.max(size.height + me.getY() - oldY, 0);
             oldY = me.getY();
