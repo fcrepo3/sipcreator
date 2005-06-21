@@ -74,7 +74,7 @@ public class SelectableEntryNode implements TreeNode {
     }
 
     public String toString() {
-        return entry.toString();
+        return entry.getShortName();
     }
     
 }

@@ -286,7 +286,7 @@ public class SIPCreator extends JApplet {
         private void walkTree(ZipOutputStream zos, StringBuffer fileMap, StringBuffer structMap, String name, SelectableEntry entry) throws IOException {
             name += entry.getShortName();
             
-            handleFile(zos, name, entry.getStream());
+            handleFile(zos, name, entry.isDirectory() ? null : entry.getStream());
             if (!entry.isDirectory()) {
                 handleFileData(fileMap, name, entry);
                 handleFileStructure(structMap,  entry);
@@ -415,7 +415,6 @@ public class SIPCreator extends JApplet {
         } 
         
         private void handleFile(ZipOutputStream zos, String name, InputStream stream) throws IOException {
-            
             if (stream == null) {
                 ZipEntry entry = new ZipEntry(name + "/");
                 //entry.setTime(file.lastModified());
@@ -465,7 +464,9 @@ public class SIPCreator extends JApplet {
             }
          
             try {
-                handleZipFile(new ZipFile(file));
+                ZipFileEntry root = handleZipFile(new ZipFile(file));
+                fileSelectTask.updateTree(file.getAbsolutePath(), root);
+                metadataEntryTask.updateTree(file.getAbsolutePath(), root);
             } catch (Exception e) {
                 GUIUtility.showExceptionDialog(SIPCreator.this, e, "Error loading zip file");
             }
@@ -492,12 +493,15 @@ public class SIPCreator extends JApplet {
                 
                 //If the root doesn't exist, figure out what it is from the current entry
                 if (rootNode == null) {
+                    System.out.println("Adding root: " + name);
                     rootNode = new ZipFileEntry(zipFile, currentEntry, null);
                     continue;
                 }
                 
                 //Set the "current parent" to the root
                 currentNode = rootNode;
+                //Throw away the root's name
+                tokenizer.nextToken();
                 String nameElement = tokenizer.nextToken();
                 
                 //While the next file name isn't the leaf of the path
@@ -508,6 +512,7 @@ public class SIPCreator extends JApplet {
                 }
                 
                 //Add the current entry as a child of the current entry
+                System.out.println("Adding " + name);
                 currentNode.addChild(new ZipFileEntry(zipFile, currentEntry, currentNode));
             }
             

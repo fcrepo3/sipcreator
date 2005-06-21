@@ -29,8 +29,8 @@ public class ZipFileEntry extends SelectableEntry {
         file = newFile;
         entry = newEntry;
         parent = newParent;
-        isDirectory = entry.getName().endsWith("/");
-        name = entry.getName();
+        name = entry.getName().replaceAll("\\\\", "/");
+        isDirectory = name.endsWith("/");
         if (isDirectory) {
             name = name.substring(0, name.length() - 1);
         }
