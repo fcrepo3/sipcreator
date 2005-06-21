@@ -54,7 +54,7 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer {
         
         label.setFont(tree.getFont());
         label.setText(stringValue);
-        if (isSelected) {
+        if (isSelected && tree.isEnabled()) {
             label.setBackground(UIManager.getColor("Tree.selectionBackground"));
             check.setBackground(UIManager.getColor("Tree.selectionBackground"));
             setBorder(selectedBorder);

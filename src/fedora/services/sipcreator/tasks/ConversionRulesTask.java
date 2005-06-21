@@ -29,14 +29,9 @@ import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
-import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
 import fedora.services.sipcreator.ConversionRules;
 import fedora.services.sipcreator.SIPCreator;
@@ -45,7 +40,7 @@ import fedora.services.sipcreator.utility.HideablePanel;
 import fedora.services.sipcreator.utility.ScrollingPanel;
 import fedora.services.sipcreator.utility.SemiEditableTableModel;
 
-public class ConversionRulesTask extends JPanel implements ListSelectionListener, ErrorHandler {
+public class ConversionRulesTask extends JPanel implements ListSelectionListener {
 
     private static final long serialVersionUID = 3257853168707645496L;
     
@@ -53,9 +48,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     private LoadConversionRulesAction loadConversionRulesAction = new LoadConversionRulesAction();
     private LoadConversionRulesWebAction loadConversionRulesWebAction = new LoadConversionRulesWebAction();
-    
-    //Tool for parsing XML documents
-    private DocumentBuilder documentBuilder;
     
     //Data structures and UI components involved with the conversion rules task
     private JLabel crulesLabel = new JLabel();
@@ -85,15 +77,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         parent = newParent;
         rules = new ConversionRules();
         
-        //Instantiate the XML Parser
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            documentBuilder = factory.newDocumentBuilder();
-            documentBuilder.setErrorHandler(this);
-        } catch (ParserConfigurationException pce) {
-            GUIUtility.showExceptionDialog(parent, pce, "XML Parser failed initialization");
-        }
-        
         //Minimum sizes are explicitly set so that labels with long text entries
         //will not keep the containing JSplitPane from resizing down past the point
         //at which all the text on the label is visible
@@ -101,6 +84,8 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         
         descriptionArea.setBackground(getBackground());
+        descriptionArea.setLineWrap(true);
+        descriptionArea.setWrapStyleWord(true);
         descriptionArea.setEditable(false);
         
         namespaceTableModel = new SemiEditableTableModel(new Object[]{"alias", "uri"}, 0, new int[]{});
@@ -292,19 +277,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     }
     
 
-    public void error(SAXParseException spe) {
-        GUIUtility.showExceptionDialog(this, spe, "Error in XML Parsing");
-    }
-
-    public void fatalError(SAXParseException spe) {
-        GUIUtility.showExceptionDialog(this, spe, "Fatal Error in XML Parsing");
-    }
-
-    public void warning(SAXParseException spe) {
-        GUIUtility.showExceptionDialog(this, spe, "Warning in XML Parsing");
-    }
-
-    
     public void valueChanged(ListSelectionEvent e) {
         if (e.getSource() == templateListDisplay) {
             templateTypeLabel.setText("");
@@ -382,7 +354,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         public void openFile(File file) throws IOException, SAXException {
             InputSource is = new InputSource(new FileInputStream(file));
-            ConversionRules crules = new ConversionRules(documentBuilder.parse(is));
+            ConversionRules crules = new ConversionRules(parent.getXMLParser().parse(is));
             updateRules(file.getCanonicalPath(), crules);
         }
         
@@ -410,7 +382,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         }
         
         public void openURL(String url) throws IOException, SAXException {
-            ConversionRules crules = new ConversionRules(documentBuilder.parse(url));
+            ConversionRules crules = new ConversionRules(parent.getXMLParser().parse(url));
             updateRules(url, crules);
         }
         

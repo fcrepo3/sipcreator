@@ -82,8 +82,7 @@ public class SIPEntry {
         Arrays.sort(childrenFiles, directoryComparator);
         
         boolean parentSelected = newParent != null && newParent.getSelectionLevel() == FULLY_SELECTED;
-        boolean acceptorApproved = creator.getFileSelectTask().getFilterAcceptor().isEntryAcceptable(this);
-        selectionLevel = parentSelected && acceptorApproved ? FULLY_SELECTED : UNSELECTED;
+        selectionLevel = parentSelected ? FULLY_SELECTED : UNSELECTED;
     }
     
     

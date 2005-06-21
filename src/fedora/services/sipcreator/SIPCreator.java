@@ -24,11 +24,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import net.sf.jmimemagic.Magic;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 
 import fedora.services.sipcreator.acceptor.SelectionAcceptor;
 import fedora.services.sipcreator.metadata.Metadata;
@@ -46,8 +50,15 @@ public class SIPCreator extends JApplet {
     //These are event handling classes.
     private CloseCurrentTabAction closeCurrentTabAction = new CloseCurrentTabAction();
     private SaveSIPAction saveSIPAction = new SaveSIPAction();
+    private LoadSIPAction loadSIPAction = new LoadSIPAction();
 //    private ChangeUIAction changeUIAction = new ChangeUIAction();
 //    private AddNewMetadataAction addNewMetadataAction = new AddNewMetadataAction();
+    
+    //Tool for parsing XML documents
+    private DocumentBuilder documentBuilder;
+
+    //Tool for file selection
+    private JFileChooser fileChooser = new JFileChooser(".");
     
     //Global data structure for storing system wide properties
     private Properties sipCreatorProperties = new Properties();
@@ -74,6 +85,14 @@ public class SIPCreator extends JApplet {
             sipCreatorProperties.load(new FileInputStream(CONFIG_FILE_NAME));
         } catch (IOException ioe) {
             GUIUtility.showExceptionDialog(this, ioe, "Properties not loaded");
+        }
+        
+        //Instantiate the XML Parser
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            documentBuilder = factory.newDocumentBuilder();
+        } catch (ParserConfigurationException pce) {
+            GUIUtility.showExceptionDialog(this, pce, "XML Parser failed initialization");
         }
         
         try {
@@ -103,9 +122,8 @@ public class SIPCreator extends JApplet {
     	JToolBar result = new JToolBar();
     	
     	result.add(saveSIPAction);
-    	//result.add(changeUIAction);
+        result.add(loadSIPAction);
     	result.add(closeCurrentTabAction);
-        //result.add(addNewMetadataAction);
     	
     	return result;
     }
@@ -196,7 +214,11 @@ public class SIPCreator extends JApplet {
     public Vector getKnownMetadataClassNames() {
         return knownMetadataClassNames;
     }
-        
+    
+    public DocumentBuilder getXMLParser() {
+        return documentBuilder;
+    }
+    
     
     private class CloseCurrentTabAction extends AbstractAction {
     	
@@ -238,8 +260,6 @@ public class SIPCreator extends JApplet {
         private static final String FOOTER = "</METS:mets>";
         
         private SelectionAcceptor acceptor = new SelectionAcceptor(SIPEntry.FULLY_SELECTED | SIPEntry.PARTIALLY_SELECTED);
-        
-        private JFileChooser fileChooser = new JFileChooser(".");
         
 		public SaveSIPAction() {
     		putValue(Action.NAME, "Save SIP");
@@ -445,6 +465,34 @@ public class SIPCreator extends JApplet {
             zos.closeEntry();
         }
     	
+    }
+    
+    private class LoadSIPAction extends AbstractAction {
+        
+        public LoadSIPAction() {
+            putValue(Action.NAME, "Load SIP");
+            putValue(Action.SHORT_DESCRIPTION, "Load a SIP file to continue working on it.");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            int choice = fileChooser.showOpenDialog(SIPCreator.this);
+            if (choice != JFileChooser.APPROVE_OPTION) return;
+            
+            File file = fileChooser.getSelectedFile();
+            if (!file.exists()) {
+                JOptionPane.showMessageDialog(SIPCreator.this, "File not found");
+                return;
+            }
+         
+            try {
+                Document xmlDocument = documentBuilder.parse(new FileInputStream(file));
+                fileSelectTask.setEnabled(false);
+                fileSelectTask.revalidate();
+            } catch (Exception e) {
+                GUIUtility.showExceptionDialog(SIPCreator.this, e, "Error loading zip file");
+            }
+        }
+        
     }
     
     public CloseCurrentTabAction getCloseCurrentTabAction() {
