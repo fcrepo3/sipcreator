@@ -6,11 +6,15 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -22,6 +26,9 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
@@ -30,6 +37,7 @@ import fedora.services.sipcreator.SelectableEntryPanel;
 import fedora.services.sipcreator.acceptor.FilterAcceptor;
 import fedora.services.sipcreator.acceptor.IntersectionAcceptor;
 import fedora.services.sipcreator.acceptor.SelectionAcceptor;
+import fedora.services.sipcreator.utility.GUIUtility;
 import fedora.services.sipcreator.utility.PopupListener;
 
 public class MetadataEntryTask extends JPanel {
@@ -37,6 +45,7 @@ public class MetadataEntryTask extends JPanel {
     private static final long serialVersionUID = 3257850999698698808L;
     
     private FilterAction filterAction = new FilterAction();
+    private AddMetadataAction addMetadataAction = new AddMetadataAction();
     private EventHandler eventHandler = new EventHandler();
     
     private FilterAcceptor filterAcceptor = new FilterAcceptor();
@@ -100,6 +109,10 @@ public class MetadataEntryTask extends JPanel {
         metadataTreeModel.nodeStructureChanged((SelectableEntryNode)metadataTreeModel.getRoot());
     }
     
+    public AddMetadataAction getAddMetadataAction() {
+        return addMetadataAction;
+    }
+    
     
     private class EventHandler extends MouseAdapter {
         
@@ -151,6 +164,35 @@ public class MetadataEntryTask extends JPanel {
             filterAcceptor.setEnabled(filterEnabledBox.isSelected());
             
             refreshTree();
+        }
+        
+    }
+    
+    private class AddMetadataAction extends AbstractAction {
+        
+        private static final long serialVersionUID = 3690479112745529654L;
+
+        public AddMetadataAction() {
+            putValue(Action.NAME, "Add Metadata");
+            putValue(Action.SHORT_DESCRIPTION, "Adds in the metadata in a METS.xml file");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            JFileChooser fileChooser = parent.getFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+
+            int choice = fileChooser.showOpenDialog(parent);
+            if (choice != JFileChooser.APPROVE_OPTION) return;
+            
+            try {
+                addMetadata(new FileInputStream(fileChooser.getSelectedFile()));
+            } catch (Exception e) {
+                GUIUtility.showExceptionDialog(parent, e);
+            }
+        }
+        
+        public void addMetadata(InputStream stream) throws IOException, SAXException {
+            Document xmlDocument = parent.getXMLParser().parse(stream);
         }
         
     }

@@ -11,12 +11,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.Enumeration;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import javax.swing.AbstractAction;
@@ -42,6 +39,7 @@ import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.tasks.ConversionRulesTask;
 import fedora.services.sipcreator.tasks.FileSelectTask;
 import fedora.services.sipcreator.tasks.MetadataEntryTask;
+import fedora.services.sipcreator.utility.ExtensionFileFilter;
 import fedora.services.sipcreator.utility.GUIUtility;
 
 public class SIPCreator extends JApplet {
@@ -53,7 +51,6 @@ public class SIPCreator extends JApplet {
     //These are event handling classes.
     private CloseCurrentTabAction closeCurrentTabAction = new CloseCurrentTabAction();
     private SaveSIPAction saveSIPAction = new SaveSIPAction();
-    private LoadSIPAction loadSIPAction = new LoadSIPAction();
 //    private ChangeUIAction changeUIAction = new ChangeUIAction();
 //    private AddNewMetadataAction addNewMetadataAction = new AddNewMetadataAction();
     
@@ -105,6 +102,8 @@ public class SIPCreator extends JApplet {
             GUIUtility.showExceptionDialog(this, e, "Mime type tool failed initialization");
         }
 
+        fileChooser.addChoosableFileFilter(new ExtensionFileFilter("zip"));
+        
         //Create the central JSplitPane
         JSplitPane topPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         topPane.setLeftComponent(createLeftPanel());
@@ -125,7 +124,6 @@ public class SIPCreator extends JApplet {
     	JToolBar result = new JToolBar();
     	
     	result.add(saveSIPAction);
-        result.add(loadSIPAction);
     	result.add(closeCurrentTabAction);
     	
     	return result;
@@ -218,14 +216,14 @@ public class SIPCreator extends JApplet {
         
         private static final String HEADER = 
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<METS:mets xmlns:METS=\"http://www.loc.gov/METS/\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n" +
-            "  <METS:dmdSec ID=\"DC\">\n" +
-            "    <METS:mdWrap MDTYPE=\"OTHER\">\n" +
-            "      <METS:xmlData>\n" +
-            "        <oai_dc:dc xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\"/>\n" +
-            "      </METS:xmlData>\n" +
-            "    </METS:mdWrap>\n" +
-            "  </METS:dmdSec>\n";
+            "<METS:mets xmlns:METS=\"http://www.loc.gov/METS/\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";// +
+//            "  <METS:dmdSec ID=\"DC\">\n" +
+//            "    <METS:mdWrap MDTYPE=\"OTHER\">\n" +
+//            "      <METS:xmlData>\n" +
+//            "        <oai_dc:dc xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\"/>\n" +
+//            "      </METS:xmlData>\n" +
+//            "    </METS:mdWrap>\n" +
+//            "  </METS:dmdSec>\n";
         
         private static final String FOOTER = "</METS:mets>";
         
@@ -237,6 +235,9 @@ public class SIPCreator extends JApplet {
     	}
     	
     	public void actionPerformed(ActionEvent ae) {
+            fileChooser.setFileFilter(null);
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            
             int choice = fileChooser.showSaveDialog(SIPCreator.this);
             if (choice != JFileChooser.APPROVE_OPTION) return;
             
@@ -261,6 +262,7 @@ public class SIPCreator extends JApplet {
                 fileMapBuffer.append("</METS:fileSec>");
                 
                 StringBuffer xmlBuffer = new StringBuffer(HEADER);
+                xmlBuffer.append(getDMDSec(fileSelectTask.getRootEntry()));
                 xmlBuffer.append(fileMapBuffer);
                 xmlBuffer.append(structMapBuffer);
                 xmlBuffer.append(FOOTER);
@@ -282,6 +284,23 @@ public class SIPCreator extends JApplet {
                 GUIUtility.showExceptionDialog(SIPCreator.this, ioe, "Error saving zip file");
             }
     	}
+        
+        private StringBuffer getDMDSec(SelectableEntry root) {
+            StringBuffer result = new StringBuffer();
+            
+            Vector metadataList = root.getMetadata();
+            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
+                Metadata metadata = (Metadata)metadataList.get(ctr);
+                
+                result.append("<METS:dmdSec ID=\"");
+                result.append(metadata.getID());
+                result.append("\"><METS:mdWrap MDTYPE=\"OTHER\"><METS:xmlData>");
+                result.append(metadata.getAsXML());
+                result.append("</METS:xmlData></METS:mdWrap></METS:dmdSec>");
+            }
+            
+            return result;
+        }
         
         private void walkTree(ZipOutputStream zos, StringBuffer fileMap, StringBuffer structMap, String name, SelectableEntry entry) throws IOException {
             name += entry.getShortName();
@@ -314,7 +333,7 @@ public class SIPCreator extends JApplet {
             buffer.append(entry.getMimeType());
             buffer.append("\">");
             buffer.append("<METS:FLocat LOCTYPE=\"URL\" xlink:href=\"file:///");
-            buffer.append(name);
+            buffer.append(name.replaceAll("\\\\", "/"));
             buffer.append("\"/>");
             buffer.append("</METS:file>");
             
@@ -366,10 +385,13 @@ public class SIPCreator extends JApplet {
         }
         
         private void handleDirectoryData(StringBuffer buffer, SelectableEntry entry) {
-            if (entry.getParent() == null) return; 
-            buffer.append("<METS:fileGrp>");
+            if (entry.getParent() == null) return;
             
             Vector metadataList = entry.getMetadata();
+            if (metadataList.size() == 0) return;
+            
+            buffer.append("<METS:fileGrp>");
+            
             for (int ctr = 0; ctr < metadataList.size(); ctr++) {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
@@ -391,10 +413,24 @@ public class SIPCreator extends JApplet {
             buffer.append("\" TYPE=\"folder\"");
             
             if (entry.getParent() == null) {
-                buffer.append(" DMDID=\"DC\">");
-            } else {
-                buffer.append(">");
+                Vector metadataList = entry.getMetadata();
+                for (int ctr = 0; ctr < metadataList.size(); ctr++) {
+                    if (ctr == 0) {
+                        buffer.append(" DMDID=\"");
+                    } else {
+                        buffer.append(" ");
+                    }
+                    
+                    buffer.append(((Metadata)metadataList.get(ctr)).getID());
+                    
+                    if (ctr == metadataList.size() - 1) {
+                        buffer.append("\">");
+                    }
+                }
+                return;
             }
+            
+            buffer.append(">");
             
             Vector metadataList = entry.getMetadata();
             for (int ctr = 0; ctr < metadataList.size(); ctr++) {
@@ -431,94 +467,19 @@ public class SIPCreator extends JApplet {
             
             zos.putNextEntry(entry);
             //FileInputStream fis = new FileInputStream(file);
-            long totalBytesRead = 0;
             byte[] buffer = new byte[BUFFER_SIZE];
             while (stream.available() > 0) {
                 int bytesRead = stream.read(buffer, 0, BUFFER_SIZE);
-                //checking bytesRead not shown.
+                if (bytesRead == -1) {
+                    break;
+                }
                 zos.write(buffer, 0, bytesRead);
-                totalBytesRead += bytesRead;
             }
             
             stream.close();
             zos.closeEntry();
         }
     	
-    }
-    
-    private class LoadSIPAction extends AbstractAction {
-        
-        public LoadSIPAction() {
-            putValue(Action.NAME, "Load SIP");
-            putValue(Action.SHORT_DESCRIPTION, "Load a SIP file to continue working on it.");
-        }
-        
-        public void actionPerformed(ActionEvent ae) {
-            int choice = fileChooser.showOpenDialog(SIPCreator.this);
-            if (choice != JFileChooser.APPROVE_OPTION) return;
-            
-            File file = fileChooser.getSelectedFile();
-            if (!file.exists()) {
-                JOptionPane.showMessageDialog(SIPCreator.this, "File not found");
-                return;
-            }
-         
-            try {
-                ZipFileEntry root = handleZipFile(new ZipFile(file));
-                fileSelectTask.updateTree(file.getAbsolutePath(), root);
-                metadataEntryTask.updateTree(file.getAbsolutePath(), root);
-            } catch (Exception e) {
-                GUIUtility.showExceptionDialog(SIPCreator.this, e, "Error loading zip file");
-            }
-        }
-
-        private ZipFileEntry handleZipFile(ZipFile zipFile) {
-            Enumeration entryEnumeration = zipFile.entries();
-            ZipEntry currentEntry;
-            ZipFileEntry rootNode = null;
-            ZipFileEntry currentNode;
-            
-            //While there are entries in the zip file, grab the next entry
-            while (entryEnumeration.hasMoreElements()) {
-                currentEntry = (ZipEntry)entryEnumeration.nextElement();
-                String name = currentEntry.getName().replaceAll("\\\\", "/");
-                StringTokenizer tokenizer = new StringTokenizer(name, "/");
-
-                //If the entry is the METS.xml file, handle that separately
-                if (name.equalsIgnoreCase("METS.xml")) {
-                    //TODO handle METS file
-                    System.out.println("Mets file found");
-                    continue;
-                }
-                
-                //If the root doesn't exist, figure out what it is from the current entry
-                if (rootNode == null) {
-                    System.out.println("Adding root: " + name);
-                    rootNode = new ZipFileEntry(zipFile, currentEntry, null);
-                    continue;
-                }
-                
-                //Set the "current parent" to the root
-                currentNode = rootNode;
-                //Throw away the root's name
-                tokenizer.nextToken();
-                String nameElement = tokenizer.nextToken();
-                
-                //While the next file name isn't the leaf of the path
-                while (tokenizer.hasMoreElements()) {
-                    //set the current parent to be the next parent
-                    currentNode = currentNode.getChild(nameElement);
-                    nameElement = tokenizer.nextToken();
-                }
-                
-                //Add the current entry as a child of the current entry
-                System.out.println("Adding " + name);
-                currentNode.addChild(new ZipFileEntry(zipFile, currentEntry, currentNode));
-            }
-            
-            return rootNode;
-        }
-        
     }
     
     
@@ -554,8 +515,8 @@ public class SIPCreator extends JApplet {
         return documentBuilder;
     }
     
-    public LoadSIPAction getLoadSIPAction() {
-        return loadSIPAction;
+    public JFileChooser getFileChooser() {
+        return fileChooser;
     }
     
     public CloseCurrentTabAction getCloseCurrentTabAction() {

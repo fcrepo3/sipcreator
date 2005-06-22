@@ -31,10 +31,12 @@ public class FileSystemEntry extends SelectableEntry {
             setMimeType("");
         }
         parent = newParent;
-        childrenFiles = file.listFiles();
-        if (childrenFiles == null) {
+        if (!file.isDirectory()) {
             childrenFiles = new File[0];
+        } else {
+            childrenFiles = file.listFiles();
         }
+        label = getShortName();
         childrenEntries = new FileSystemEntry[childrenFiles.length];
         
         Arrays.sort(childrenFiles, fileNameComparator);

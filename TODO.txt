@@ -33,6 +33,8 @@ D    * How to get the "type" in the structMap section of the METS file
      * Fix the header creation
      * How do we attach multiple metadata records to the root of the tree?
    * Loading of a SIP file
+D    * Read in individual SIP tree
+     * Parse in METS file
    * MIME Type detection
      * Use all 3?  Give the user the power to switch?
 D    * Integrate jMimeMagic

@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Vector;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -247,7 +248,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         while (namespaceTableModel.getRowCount() > 0) namespaceTableModel.removeRow(0);
         //datastreamListModel.clear();
         templateListModel.clear();
-        
+
         for (int ctr = 0; ctr < newRules.namespaceList.size(); ctr++) {
             ConversionRules.Namespace namespace =
                 (ConversionRules.Namespace)newRules.namespaceList.get(ctr);
@@ -264,10 +265,19 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         }
     }
     
-    public ConversionRules getRules() {
-        return rules;
+    public void addDatastreamTemplate(ConversionRules.DatastreamTemplate newTemplate) {
+        templateListModel.addElement(newTemplate);
+        rules.datastreamTemplateList.add(newTemplate);
     }
-
+    
+    public ConversionRules.DatastreamTemplate getDatastreamTemplate(String nodeType) {
+        return rules.getDatastreamTemplate(nodeType);
+    }
+    
+    public Vector getDatastreamTemplates() {
+        return rules.datastreamTemplateList;
+    }
+    
     public void openURL(String value) throws SAXException, IOException {
         loadConversionRulesWebAction.openURL(value);
     }

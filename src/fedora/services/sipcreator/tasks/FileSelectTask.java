@@ -8,6 +8,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.StringTokenizer;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -25,10 +29,11 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import fedora.services.sipcreator.SelectableEntryNode;
-import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.FileSystemEntry;
+import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
+import fedora.services.sipcreator.SelectableEntryNode;
+import fedora.services.sipcreator.ZipFileEntry;
 import fedora.services.sipcreator.acceptor.UniversalAcceptor;
 import fedora.services.sipcreator.utility.CheckRenderer;
 import fedora.services.sipcreator.utility.GUIUtility;
@@ -132,20 +137,20 @@ public class FileSelectTask extends JPanel {
 
         private static final long serialVersionUID = 3763096349595678519L;
 
-        private JFileChooser fileChooser = new JFileChooser(".");
-        
         public ChangeDirectoryAction() {
             putValue(Action.NAME, "Browse");
             putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory");
         }
         
         public void actionPerformed(ActionEvent ae) {
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            JFileChooser fileChooser = parent.getFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+
             int choice = fileChooser.showOpenDialog(parent);
             if (choice != JFileChooser.APPROVE_OPTION) return;
             
             File file = fileChooser.getSelectedFile();
-            FileSystemEntry rootEntry;
+            SelectableEntry rootEntry;
             String rootDirectoryName;
             
             if (file.getName().equalsIgnoreCase("METS.xml")) {
@@ -164,7 +169,11 @@ public class FileSelectTask extends JPanel {
             
             try {
                 rootDirectoryName = file.getCanonicalPath();
-                rootEntry = new FileSystemEntry(file, null, parent);
+                if (file.isDirectory()) {
+                    rootEntry = new FileSystemEntry(file, null, parent);
+                } else {
+                    rootEntry = handleZipFile(new ZipFile(file));
+                }
                 rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
             } catch (IOException ioe) {
                 GUIUtility.showExceptionDialog(parent, ioe);
@@ -179,6 +188,50 @@ public class FileSelectTask extends JPanel {
             updateTree(rootDirectoryName, rootEntry);
         }
         
-    }
+        private ZipFileEntry handleZipFile(ZipFile zipFile) {
+            Enumeration entryEnumeration = zipFile.entries();
+            ZipEntry currentEntry;
+            ZipFileEntry rootNode = null;
+            ZipFileEntry currentNode;
+            
+            //While there are entries in the zip file, grab the next entry
+            while (entryEnumeration.hasMoreElements()) {
+                currentEntry = (ZipEntry)entryEnumeration.nextElement();
+                String name = currentEntry.getName().replaceAll("\\\\", "/");
+                StringTokenizer tokenizer = new StringTokenizer(name, "/");
 
+                //If the entry is the METS.xml file, handle that separately
+                if (name.equalsIgnoreCase("METS.xml")) {
+                    //TODO handle METS file
+                    continue;
+                }
+                
+                //If the root doesn't exist, figure out what it is from the current entry
+                if (rootNode == null) {
+                    rootNode = new ZipFileEntry(zipFile, currentEntry, null);
+                    continue;
+                }
+                
+                //Set the "current parent" to the root
+                currentNode = rootNode;
+                //Throw away the root's name
+                tokenizer.nextToken();
+                String nameElement = tokenizer.nextToken();
+                
+                //While the next file name isn't the leaf of the path
+                while (tokenizer.hasMoreElements()) {
+                    //set the current parent to be the next parent
+                    currentNode = currentNode.getChild(nameElement);
+                    nameElement = tokenizer.nextToken();
+                }
+                
+                //Add the current entry as a child of the current entry
+                currentNode.addChild(new ZipFileEntry(zipFile, currentEntry, currentNode));
+            }
+            
+            return rootNode;
+        }
+        
+    }
+    
 }

@@ -34,6 +34,7 @@ public class ZipFileEntry extends SelectableEntry {
         if (isDirectory) {
             name = name.substring(0, name.length() - 1);
         }
+        label = getShortName();
     }
     
     

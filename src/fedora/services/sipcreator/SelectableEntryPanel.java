@@ -188,7 +188,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         private JTextField labelField = new JTextField();
         
-        private JComboBox typeBox = new JComboBox(creator.getConversionRulesTask().getRules().datastreamTemplateList);
+        private JComboBox typeBox = new JComboBox(creator.getConversionRulesTask().getDatastreamTemplates());
         
         private JTextField nameField = new JTextField();
         
@@ -227,27 +227,23 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         
         public void actionPerformed(ActionEvent ae) {
-            if (ae.getSource() == typeBox && typeBox.getSelectedIndex() == -1) {
+            if (ae.getSource() == typeBox && ae.getActionCommand().equals("comboBoxEdited") && typeBox.getSelectedIndex() == -1) {
                 int choice = JOptionPane.showConfirmDialog(creator,
-                        "Would you like to add this as a new datastream template?",
+                        "Would you like to add \"" + typeBox.getSelectedItem() + "\" as a new datastream template?",
                         "Add New Template", JOptionPane.YES_NO_OPTION);
-                if (choice != JOptionPane.YES_OPTION) {
-                    updateFromMetadata();
-                    return;
+                if (choice == JOptionPane.YES_OPTION) {
+                    ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate();
+                    newDT.nodeType = typeBox.getSelectedItem().toString();
+                    creator.getConversionRulesTask().addDatastreamTemplate(newDT);
+                    typeBox.setSelectedItem(newDT);
                 }
-                
-                ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate();
-                newDT.nodeType = typeBox.getSelectedItem().toString();
-                creator.getConversionRulesTask().getRules().datastreamTemplateList.add(newDT);
-                typeBox.setSelectedItem(newDT);
             }
             updateMetadata();
         }
         
         
         public void updateFromMetadata() {
-            ConversionRules rules = creator.getConversionRulesTask().getRules();
-            Object template = rules.getDatastreamTemplate(metadataPanel.getMetadata().getType());
+            Object template = creator.getConversionRulesTask().getDatastreamTemplate(metadataPanel.getMetadata().getType());
             if (template != null) {
                 typeBox.setSelectedItem(template);
             } else {

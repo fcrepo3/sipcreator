@@ -16,6 +16,7 @@ public class ConversionRules {
     
     public final Vector objectTemplateList = new Vector(); 
     
+    
     public static class Namespace {
         
         public String alias;
@@ -78,6 +79,7 @@ public class ConversionRules {
         
     }
     
+    
     public String toString() {
         String toReturn = "ConversionRules [description=" + description + "]";
         for (int ctr = 0; ctr < namespaceList.size(); ctr++) {
@@ -92,6 +94,7 @@ public class ConversionRules {
         return toReturn;
     }
 
+    
     private String datastreamToString(DatastreamTemplate datastream) {
         String toReturn = "\tDatastreamTemplate [nodeType=" + datastream.nodeType;
         toReturn += ",description=" + description + "]";
@@ -126,6 +129,7 @@ public class ConversionRules {
         return toReturn;
     }
     
+    
     public ConversionRules() {
     }
     
@@ -149,6 +153,7 @@ public class ConversionRules {
         }
     }
 
+    
     public DatastreamTemplate getDatastreamTemplate(String nodeType) {
         for (int ctr = 0; ctr < datastreamTemplateList.size(); ctr++) {
             if (datastreamTemplateList.get(ctr).toString().equals(nodeType)) {
@@ -166,6 +171,7 @@ public class ConversionRules {
         }
         return null;
     }
+    
     
     private Namespace handleNamespace(Element node, Namespace namespace) {
     	if (namespace == null) {

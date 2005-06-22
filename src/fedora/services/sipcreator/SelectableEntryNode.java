@@ -56,7 +56,7 @@ public class SelectableEntryNode implements TreeNode {
 
     public int getIndex(TreeNode node) {
         SelectableEntryNode casted = (SelectableEntryNode)node;
-        return getEntry().getIndex(casted.getEntry(), acceptor);
+        return entry.getIndex(casted.getEntry(), acceptor);
     }
 
     public TreeNode getParent() {
