@@ -90,6 +90,7 @@ public class SIPCreator extends JApplet {
         //Instantiate the XML Parser
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
             documentBuilder = factory.newDocumentBuilder();
         } catch (ParserConfigurationException pce) {
             GUIUtility.showExceptionDialog(this, pce, "XML Parser failed initialization");

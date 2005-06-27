@@ -29,6 +29,11 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+
 import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
@@ -41,6 +46,8 @@ import fedora.services.sipcreator.utility.GUIUtility;
 public class FileSelectTask extends JPanel {
 
     private static final long serialVersionUID = 4051332249108427830L;
+    
+    public static final String METS_NS = "http://www.loc.gov/METS/";
     
     private UniversalAcceptor acceptor = new UniversalAcceptor();
     
@@ -171,12 +178,13 @@ public class FileSelectTask extends JPanel {
                 rootDirectoryName = file.getCanonicalPath();
                 if (file.isDirectory()) {
                     rootEntry = new FileSystemEntry(file, null, parent);
+                    rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
                 } else {
                     rootEntry = handleZipFile(new ZipFile(file));
+                    rootEntry.setSelectionLevel(FileSystemEntry.FULLY_SELECTED, acceptor);
                 }
-                rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
-            } catch (IOException ioe) {
-                GUIUtility.showExceptionDialog(parent, ioe);
+            } catch (Exception e) {
+                GUIUtility.showExceptionDialog(parent, e);
                 return;
             }
 
@@ -186,9 +194,10 @@ public class FileSelectTask extends JPanel {
             }
             parent.getMetadataEntryTask().updateTree(rootDirectoryName, rootEntry);
             updateTree(rootDirectoryName, rootEntry);
+            System.gc();
         }
         
-        private ZipFileEntry handleZipFile(ZipFile zipFile) {
+        private ZipFileEntry handleZipFile(ZipFile zipFile) throws IOException, SAXException {
             Enumeration entryEnumeration = zipFile.entries();
             ZipEntry currentEntry;
             ZipFileEntry rootNode = null;
@@ -202,7 +211,6 @@ public class FileSelectTask extends JPanel {
 
                 //If the entry is the METS.xml file, handle that separately
                 if (name.equalsIgnoreCase("METS.xml")) {
-                    //TODO handle METS file
                     continue;
                 }
                 
@@ -229,7 +237,19 @@ public class FileSelectTask extends JPanel {
                 currentNode.addChild(new ZipFileEntry(zipFile, currentEntry, currentNode));
             }
             
+            handleMETS(zipFile, rootNode);
+            
             return rootNode;
+        }
+
+        private void handleMETS(ZipFile zipFile, ZipFileEntry rootNode) throws IOException, SAXException {
+            ZipEntry metsEntry = zipFile.getEntry("METS.xml");
+            Document metsDocument = parent.getXMLParser().parse(zipFile.getInputStream(metsEntry));
+            
+            Element metsNode = (Element)metsDocument.getElementsByTagNameNS(METS_NS, "mets").item(0);
+            Element dmdSecNode = (Element)metsNode.getElementsByTagNameNS(METS_NS, "dmdSec");
+            Element fileSecNode = (Element)metsNode.getElementsByTagNameNS(METS_NS, "fileSec");
+            Element structMapNode = (Element)metsNode.getElementsByTagNameNS(METS_NS, "structMap");
         }
         
     }
