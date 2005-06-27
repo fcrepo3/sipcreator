@@ -216,14 +216,7 @@ public class SIPCreator extends JApplet {
         
         private static final String HEADER = 
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<METS:mets xmlns:METS=\"http://www.loc.gov/METS/\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";// +
-//            "  <METS:dmdSec ID=\"DC\">\n" +
-//            "    <METS:mdWrap MDTYPE=\"OTHER\">\n" +
-//            "      <METS:xmlData>\n" +
-//            "        <oai_dc:dc xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\"/>\n" +
-//            "      </METS:xmlData>\n" +
-//            "    </METS:mdWrap>\n" +
-//            "  </METS:dmdSec>\n";
+            "<METS:mets xmlns:METS=\"http://www.loc.gov/METS/\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
         
         private static final String FOOTER = "</METS:mets>";
         
@@ -308,12 +301,12 @@ public class SIPCreator extends JApplet {
             handleFile(zos, name, entry.isDirectory() ? null : entry.getStream());
             if (!entry.isDirectory()) {
                 handleFileData(fileMap, name, entry);
-                handleFileStructure(structMap,  entry);
+                handleFileStructure(structMap, name, entry);
                 return;
             }
             
             handleDirectoryData(fileMap, entry);
-            startDirectoryStructure(structMap, entry);
+            startDirectoryStructure(structMap, name, entry);
             
             name += File.separator;
             int childCount = entry.getChildCount(acceptor);
@@ -353,9 +346,11 @@ public class SIPCreator extends JApplet {
             buffer.append("</METS:fileGrp></METS:fileGrp>");
         }
         
-        private void handleFileStructure(StringBuffer buffer, SelectableEntry entry) {
+        private void handleFileStructure(StringBuffer buffer, String name, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
             buffer.append(entry.getLabel());
+            buffer.append("\" ID=\"");
+            buffer.append(name);
             buffer.append("\" TYPE=\"file\">");
             
             buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
@@ -407,30 +402,32 @@ public class SIPCreator extends JApplet {
             buffer.append("</METS:fileGrp>");
         }
         
-        private void startDirectoryStructure(StringBuffer buffer, SelectableEntry entry) {
+        private void startDirectoryStructure(StringBuffer buffer, String name, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
             buffer.append(entry.getLabel());
-            buffer.append("\" TYPE=\"folder\"");
+            buffer.append("\" ID=\"");
+            buffer.append(name);
+            buffer.append("\" TYPE=\"");
+            buffer.append("folder");
             
             if (entry.getParent() == null) {
                 Vector metadataList = entry.getMetadata();
                 for (int ctr = 0; ctr < metadataList.size(); ctr++) {
                     if (ctr == 0) {
-                        buffer.append(" DMDID=\"");
+                        buffer.append("\" DMDID=\"");
                     } else {
                         buffer.append(" ");
                     }
                     
                     buffer.append(((Metadata)metadataList.get(ctr)).getID());
-                    
-                    if (ctr == metadataList.size() - 1) {
-                        buffer.append("\">");
-                    }
                 }
+                
+                buffer.append("\">");
+                
                 return;
             }
             
-            buffer.append(">");
+            buffer.append("\">");
             
             Vector metadataList = entry.getMetadata();
             for (int ctr = 0; ctr < metadataList.size(); ctr++) {
