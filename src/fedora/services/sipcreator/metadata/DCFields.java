@@ -22,6 +22,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import fedora.services.sipcreator.Constants;
 import fedora.services.sipcreator.utility.DOMUtility;
 import fedora.services.sipcreator.utility.StreamUtility;
 import fedora.services.sipcreator.utility.TableSorter;
@@ -34,12 +35,10 @@ import fedora.services.sipcreator.utility.TableSorter;
  * @author cwilper@cs.cornell.edu
  * @version $Id$
  */
-public class DCFields extends Metadata {
+public class DCFields extends Metadata implements Constants {
 
 	public static final String OAIDC_PREFIX = "oai_dc";
-	public static final String OAIDC_NS = "http://www.openarchives.org/OAI/2.0/oai_dc/";
 	public static final String DC_PREFIX = "dc";
-	public static final String DC_NS = "http://purl.org/dc/elements/1.1/";
 			
     public static final String[] DC_FIELDS =
     {"title", "creator", "subject", "description", "publisher", 
@@ -68,7 +67,7 @@ public class DCFields extends Metadata {
     public DCFields(Element xmlNode) {
         super(xmlNode);
         
-        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS("http://www.loc.gov/METS/", "xmlData").item(0);
+        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS(METS_NS, "xmlData").item(0);
         Element oaiDCNode = DOMUtility.firstElementNamed(xmlDataNode, OAIDC_NS, "dc");
         NodeList childList = oaiDCNode.getChildNodes();
         for (int ctr = 0; ctr < childList.getLength(); ctr++) {
@@ -203,7 +202,7 @@ public class DCFields extends Metadata {
     private void appendXML(List values, String name, StringBuffer out) {
         for (int i=0; i<values.size(); i++) {
             out.append("  <dc:" + name + ">");
-            out.append(StreamUtility.enc((String) values.get(i)));
+            out.append(StreamUtility.enc((String)values.get(i)));
             out.append("</dc:" + name + ">\n");
         }
     }

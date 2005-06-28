@@ -7,8 +7,9 @@ import javax.swing.JTextArea;
 
 import org.w3c.dom.Element;
 
+import fedora.services.sipcreator.Constants;
 
-public class MinimalMetadata extends Metadata {
+public class MinimalMetadata extends Metadata implements Constants {
 
     private String xmlString = new String();
     
@@ -18,7 +19,7 @@ public class MinimalMetadata extends Metadata {
     public MinimalMetadata(Element xmlNode) {
         super(xmlNode);
 
-        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS("http://www.loc.gov/METS/", "xmlData").item(0);
+        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS(METS_NS, "xmlData").item(0);
         if (xmlDataNode.getFirstChild() != null) {
             setXMLString(xmlDataNode.getFirstChild().toString());
         }

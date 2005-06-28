@@ -253,8 +253,8 @@ public class FileSelectTask extends JPanel {
             Element fileSecNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "fileSec");
             
             Hashtable metadataTable = new Hashtable();
-            addMetadataToTable(metadataTable, metsNode.getElementsByTagNameNS(METS_NS, "dmdSec"), "mdWrap", "MDTYPE");
-            addMetadataToTable(metadataTable, fileSecNode.getElementsByTagNameNS(METS_NS, "file"), "FContent", "ID");
+            //addMetadataToTable(metadataTable, metsNode.getElementsByTagNameNS(METS_NS, "dmdSec"), "mdWrap", "MDTYPE");
+            addMetadataToTable(metadataTable, fileSecNode.getElementsByTagNameNS(METS_NS, "file"));
             
             Element structMapNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "structMap");
             Element rootDiv = DOMUtility.firstElementNamed(structMapNode, METS_NS, "div");
@@ -262,22 +262,22 @@ public class FileSelectTask extends JPanel {
         }
         
         private void traverseStructMap(ZipFileEntry currentEntry, Element currentDiv, Hashtable mdTable) {
-            if (currentEntry.getParent() == null) {
-                String dmdidField = currentDiv.getAttribute("DMDID");
-                StringTokenizer tokenizer = new StringTokenizer(dmdidField);
-                
-                while (tokenizer.hasMoreElements()) {
-                    try {
-                        String token = tokenizer.nextToken();
-                        Object metadata = mdTable.get(token);
-                        if (metadata == null) {
-                            continue;
-                        }
-                        currentEntry.getMetadata().add(metadata);
-                    } catch (Exception e) {}
-                }
-            }
-            
+//            if (currentEntry.getParent() == null) {
+//                String dmdidField = currentDiv.getAttribute("DMDID");
+//                StringTokenizer tokenizer = new StringTokenizer(dmdidField);
+//                
+//                while (tokenizer.hasMoreElements()) {
+//                    try {
+//                        String token = tokenizer.nextToken();
+//                        Object metadata = mdTable.get(token);
+//                        if (metadata == null) {
+//                            continue;
+//                        }
+//                        currentEntry.getMetadata().add(metadata);
+//                    } catch (Exception e) {}
+//                }
+//            }
+//            
             currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
             String id = currentDiv.getAttribute("CONTENTIDS");
             if (mdTable.get(id) != null) {
@@ -307,11 +307,11 @@ public class FileSelectTask extends JPanel {
             }
         }
         
-        private void addMetadataToTable(Hashtable table, NodeList childList, String firstChildName, String firstChildAttribute) {
+        private void addMetadataToTable(Hashtable table, NodeList childList) {
             for (int ctr = 0; ctr < childList.getLength(); ctr++) {
                 try {
                     Element current = (Element)childList.item(ctr);
-                    Element firstChild = DOMUtility.firstElementNamed(current, METS_NS, firstChildName, false);
+                    Element firstChild = DOMUtility.firstElementNamed(current, METS_NS, "FContent", false);
                     if (firstChild == null) {
                         //Ensures that this file entry contains an FLocat subelement
                         DOMUtility.firstElementNamed(current, METS_NS, "FLocat");
@@ -319,7 +319,7 @@ public class FileSelectTask extends JPanel {
                     }
                             
                     String id = current.getAttribute("ID");
-                    String mdType = firstChild.getAttribute(firstChildAttribute);
+                    String mdType = firstChild.getAttribute("ID");
                     String label = firstChild.getAttribute("LABEL");
                     String type = firstChild.getAttribute("OTHERMDTYPE");
                             

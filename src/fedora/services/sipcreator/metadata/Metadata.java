@@ -2,15 +2,21 @@ package fedora.services.sipcreator.metadata;
 
 import org.w3c.dom.Element;
 
-public abstract class Metadata {
+import fedora.services.sipcreator.Constants;
 
-    //private static long currentID = 0;
+public abstract class Metadata implements Constants {
+
+    private static long lastID = 0;
 
     public static synchronized long getNextID() {
-        long result = System.currentTimeMillis();
-        try { Thread.sleep(10); }
-        catch (InterruptedException ie) {}
-        return result;
+        long nextID = System.currentTimeMillis();
+        while (nextID == lastID) {
+            try { Thread.sleep(10); }
+            catch (InterruptedException ie) {}
+            nextID = System.currentTimeMillis();
+        }
+        lastID = nextID;
+        return lastID;
     }
     
     private String id;
@@ -24,9 +30,9 @@ public abstract class Metadata {
     }
     
     public Metadata(Element xmlNode) {
-        if (xmlNode.getNamespaceURI().equals("http://www.loc.gov/METS/") && xmlNode.getLocalName().equals("dmdSec")) {
+        if (xmlNode.getNamespaceURI().equals(METS_NS) && xmlNode.getLocalName().equals("dmdSec")) {
             id = xmlNode.getAttribute("ID");
-        } else if (xmlNode.getNamespaceURI().equals("http://www.loc.gov/METS/") && xmlNode.getLocalName().equals("file")) {
+        } else if (xmlNode.getNamespaceURI().equals(METS_NS) && xmlNode.getLocalName().equals("file")) {
             id = xmlNode.getAttribute("ID");
         } else {
             id = Long.toString(getNextID());

@@ -41,6 +41,7 @@ import fedora.services.sipcreator.tasks.FileSelectTask;
 import fedora.services.sipcreator.tasks.MetadataEntryTask;
 import fedora.services.sipcreator.utility.ExtensionFileFilter;
 import fedora.services.sipcreator.utility.GUIUtility;
+import fedora.services.sipcreator.utility.StreamUtility;
 
 public class SIPCreator extends JApplet {
 
@@ -51,8 +52,6 @@ public class SIPCreator extends JApplet {
     //These are event handling classes.
     private CloseCurrentTabAction closeCurrentTabAction = new CloseCurrentTabAction();
     private SaveSIPAction saveSIPAction = new SaveSIPAction();
-//    private ChangeUIAction changeUIAction = new ChangeUIAction();
-//    private AddNewMetadataAction addNewMetadataAction = new AddNewMetadataAction();
     
     //Tool for parsing XML documents
     private DocumentBuilder documentBuilder;
@@ -86,6 +85,8 @@ public class SIPCreator extends JApplet {
         } catch (IOException ioe) {
             GUIUtility.showExceptionDialog(this, ioe, "Properties not loaded");
         }
+        
+        rightPanel.setToolTipText("Right Panel");
         
         //Instantiate the XML Parser
         try {
@@ -135,7 +136,7 @@ public class SIPCreator extends JApplet {
     private JComponent createLeftPanel() {
         JTabbedPane leftPanel = new JTabbedPane();
         
-        leftPanel.addTab("File Selection", fileSelectTask);
+        leftPanel.addTab("File Selection", null, fileSelectTask, "blarg");
         leftPanel.addTab("Metadata Entry", metadataEntryTask);
         leftPanel.addTab("Conversion Rules", conversionRulesTask);
         
@@ -207,6 +208,7 @@ public class SIPCreator extends JApplet {
 			SelectableEntryPanel mlp = (SelectableEntryPanel)rightPanel.getComponentAt(index);
             mlp.updateMetadata();
 			rightPanel.remove(index);
+            rightPanel.revalidate();
     	}
     	
     }
@@ -245,20 +247,19 @@ public class SIPCreator extends JApplet {
             
             try {
                 ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(file));
-                //zos.setLevel(9);
 
                 for (int ctr = 0; ctr < rightPanel.getTabCount(); ctr++) {
                     ((SelectableEntryPanel)rightPanel.getComponentAt(ctr)).updateMetadata();
                 }
                 
-                StringBuffer fileMapBuffer = new StringBuffer("<METS:fileSec>");
+                StringBuffer fileMapBuffer = new StringBuffer("<METS:fileSec><METS:fileGrp>");
                 StringBuffer structMapBuffer = new StringBuffer("<METS:structMap>");
                 walkTree(zos, fileMapBuffer, structMapBuffer, "", fileSelectTask.getRootEntry());
                 structMapBuffer.append("</METS:structMap>");
-                fileMapBuffer.append("</METS:fileSec>");
+                fileMapBuffer.append("</METS:fileGrp></METS:fileSec>");
                 
                 StringBuffer xmlBuffer = new StringBuffer(HEADER);
-                xmlBuffer.append(getDMDSec(fileSelectTask.getRootEntry()));
+                //xmlBuffer.append(getDMDSec(fileSelectTask.getRootEntry()));
                 xmlBuffer.append(fileMapBuffer);
                 xmlBuffer.append(structMapBuffer);
                 xmlBuffer.append(FOOTER);
@@ -280,29 +281,6 @@ public class SIPCreator extends JApplet {
                 GUIUtility.showExceptionDialog(SIPCreator.this, ioe, "Error saving zip file");
             }
     	}
-        
-        private StringBuffer getDMDSec(SelectableEntry root) {
-            StringBuffer result = new StringBuffer();
-            
-            Vector metadataList = root.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
-                
-                result.append("<METS:dmdSec ID=\"");
-                result.append(metadata.getID());
-                result.append("\"><METS:mdWrap MDTYPE=\"");
-                result.append(metadata.getClass().getName());
-                result.append("\" LABEL=\"");
-                result.append(metadata.getLabel());
-                result.append("\" OTHERMDTYPE=\"");
-                result.append(metadata.getType());
-                result.append("\"><METS:xmlData>");
-                result.append(metadata.getAsXML());
-                result.append("</METS:xmlData></METS:mdWrap></METS:dmdSec>");
-            }
-            
-            return result;
-        }
         
         private void walkTree(ZipOutputStream zos, StringBuffer fileMap, StringBuffer structMap, String name, SelectableEntry entry) throws IOException {
             name += entry.getShortName();
@@ -327,15 +305,13 @@ public class SIPCreator extends JApplet {
         }
         
         private void handleFileData(StringBuffer buffer, String name, SelectableEntry entry) {
-            buffer.append("<METS:fileGrp><METS:fileGrp>");
-            
             buffer.append("<METS:file ID=\"");
             buffer.append(entry.getID());
             buffer.append("\" MIMETYPE=\"");
             buffer.append(entry.getMimeType());
             buffer.append("\">");
             buffer.append("<METS:FLocat LOCTYPE=\"URL\" xlink:href=\"file:///");
-            buffer.append(name.replaceAll("\\\\", "/"));
+            buffer.append(StreamUtility.enc(name.replaceAll("\\\\", "/")));
             buffer.append("\"/>");
             buffer.append("</METS:file>");
             
@@ -353,8 +329,6 @@ public class SIPCreator extends JApplet {
                 buffer.append("</METS:xmlData></METS:FContent>");
                 buffer.append("</METS:file>");
             }
-
-            buffer.append("</METS:fileGrp></METS:fileGrp>");
         }
         
         private void handleFileStructure(StringBuffer buffer, SelectableEntry entry) {
@@ -393,12 +367,10 @@ public class SIPCreator extends JApplet {
         }
         
         private void handleDirectoryData(StringBuffer buffer, SelectableEntry entry) {
-            if (entry.getParent() == null) return;
+            //if (entry.getParent() == null) return;
             
             Vector metadataList = entry.getMetadata();
             if (metadataList.size() == 0) return;
-            
-            buffer.append("<METS:fileGrp>");
             
             for (int ctr = 0; ctr < metadataList.size(); ctr++) {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
@@ -413,8 +385,6 @@ public class SIPCreator extends JApplet {
                 buffer.append("</METS:xmlData></METS:FContent>");
                 buffer.append("</METS:file>");
             }
-            
-            buffer.append("</METS:fileGrp>");
         }
         
         private void startDirectoryStructure(StringBuffer buffer, SelectableEntry entry) {
@@ -425,22 +395,22 @@ public class SIPCreator extends JApplet {
             buffer.append("\" TYPE=\"");
             buffer.append("folder");
             
-            if (entry.getParent() == null) {
-                Vector metadataList = entry.getMetadata();
-                for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                    if (ctr == 0) {
-                        buffer.append("\" DMDID=\"");
-                    } else {
-                        buffer.append(" ");
-                    }
-                    
-                    buffer.append(((Metadata)metadataList.get(ctr)).getID());
-                }
-                
-                buffer.append("\">");
-                
-                return;
-            }
+//            if (entry.getParent() == null) {
+//                Vector metadataList = entry.getMetadata();
+//                for (int ctr = 0; ctr < metadataList.size(); ctr++) {
+//                    if (ctr == 0) {
+//                        buffer.append("\" DMDID=\"");
+//                    } else {
+//                        buffer.append(" ");
+//                    }
+//                    
+//                    buffer.append(((Metadata)metadataList.get(ctr)).getID());
+//                }
+//                
+//                buffer.append("\">");
+//                
+//                return;
+//            }
             
             buffer.append("\">");
             
