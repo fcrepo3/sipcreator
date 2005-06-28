@@ -5,19 +5,33 @@ import java.awt.BorderLayout;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.w3c.dom.Element;
+
 
 public class MinimalMetadata extends Metadata {
 
-    private String xmlString;
+    private String xmlString = new String();
     
     public MinimalMetadata() {
-        setHint("Plain Text");
+    }
+
+    public MinimalMetadata(Element xmlNode) {
+        super(xmlNode);
+
+        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS("http://www.loc.gov/METS/", "xmlData").item(0);
+        if (xmlDataNode.getFirstChild() != null) {
+            setXMLString(xmlDataNode.getFirstChild().toString());
+        }
     }
     
     public MetadataPanel getPanel() {
         return new MinimalMetadataPanel(this);
     }
 
+    public String getHint() {
+        return "XML: " + getLabel();
+    }
+    
     public void setXMLString(String newXMLString) {
         xmlString = newXMLString;
     }

@@ -71,7 +71,7 @@ public class SIPCreator extends JApplet {
     
     //List of known metadata formats and their display names
     private Vector knownMetadataClasses = new Vector();
-    private Vector knownMetadataClassNames = new Vector();
+    private Vector knownMetadataDisplayNames = new Vector();
     
     //Task elements, these are larger classes that encapsulate everything necessary
     //for the end user to perform a certain task.
@@ -91,6 +91,8 @@ public class SIPCreator extends JApplet {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
+            factory.setIgnoringElementContentWhitespace(true);
+            factory.setIgnoringComments(true);
             documentBuilder = factory.newDocumentBuilder();
         } catch (ParserConfigurationException pce) {
             GUIUtility.showExceptionDialog(this, pce, "XML Parser failed initialization");
@@ -178,7 +180,7 @@ public class SIPCreator extends JApplet {
                     Class metadataClass = Class.forName(className);
                     if (!Metadata.class.isAssignableFrom(metadataClass)) continue;
                     knownMetadataClasses.add(metadataClass);
-                    knownMetadataClassNames.add(displayName);
+                    knownMetadataDisplayNames.add(displayName);
                 } catch (ClassNotFoundException e) {
                     continue;
                 }
@@ -288,7 +290,13 @@ public class SIPCreator extends JApplet {
                 
                 result.append("<METS:dmdSec ID=\"");
                 result.append(metadata.getID());
-                result.append("\"><METS:mdWrap MDTYPE=\"OTHER\"><METS:xmlData>");
+                result.append("\"><METS:mdWrap MDTYPE=\"");
+                result.append(metadata.getClass().getName());
+                result.append("\" LABEL=\"");
+                result.append(metadata.getLabel());
+                result.append("\" OTHERMDTYPE=\"");
+                result.append(metadata.getType());
+                result.append("\"><METS:xmlData>");
                 result.append(metadata.getAsXML());
                 result.append("</METS:xmlData></METS:mdWrap></METS:dmdSec>");
             }
@@ -302,12 +310,12 @@ public class SIPCreator extends JApplet {
             handleFile(zos, name, entry.isDirectory() ? null : entry.getStream());
             if (!entry.isDirectory()) {
                 handleFileData(fileMap, name, entry);
-                handleFileStructure(structMap, name, entry);
+                handleFileStructure(structMap, entry);
                 return;
             }
             
             handleDirectoryData(fileMap, entry);
-            startDirectoryStructure(structMap, name, entry);
+            startDirectoryStructure(structMap, entry);
             
             name += File.separator;
             int childCount = entry.getChildCount(acceptor);
@@ -338,7 +346,9 @@ public class SIPCreator extends JApplet {
                 buffer.append("<METS:file ID=\"");
                 buffer.append(metadata.getID());
                 buffer.append("\" MIMETYPE=\"text/xml\">");
-                buffer.append("<METS:FContent><METS:xmlData>");
+                buffer.append("<METS:FContent ID=\"");
+                buffer.append(metadata.getClass().getName());
+                buffer.append("\"><METS:xmlData>");
                 buffer.append(metadata.getAsXML());
                 buffer.append("</METS:xmlData></METS:FContent>");
                 buffer.append("</METS:file>");
@@ -347,11 +357,11 @@ public class SIPCreator extends JApplet {
             buffer.append("</METS:fileGrp></METS:fileGrp>");
         }
         
-        private void handleFileStructure(StringBuffer buffer, String name, SelectableEntry entry) {
+        private void handleFileStructure(StringBuffer buffer, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
             buffer.append(entry.getLabel());
             buffer.append("\" ID=\"");
-            buffer.append(name);
+            buffer.append(entry.getShortName());
             buffer.append("\" TYPE=\"file\">");
             
             buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
@@ -394,7 +404,9 @@ public class SIPCreator extends JApplet {
                 buffer.append("<METS:file ID=\"");
                 buffer.append(metadata.getID());
                 buffer.append("\" MIMETYPE=\"text/xml\">");
-                buffer.append("<METS:FContent><METS:xmlData>");
+                buffer.append("<METS:FContent ID=\"");
+                buffer.append(metadata.getClass().getName());
+                buffer.append("\"><METS:xmlData>");
                 buffer.append(metadata.getAsXML());
                 buffer.append("</METS:xmlData></METS:FContent>");
                 buffer.append("</METS:file>");
@@ -403,11 +415,11 @@ public class SIPCreator extends JApplet {
             buffer.append("</METS:fileGrp>");
         }
         
-        private void startDirectoryStructure(StringBuffer buffer, String name, SelectableEntry entry) {
+        private void startDirectoryStructure(StringBuffer buffer, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
             buffer.append(entry.getLabel());
             buffer.append("\" ID=\"");
-            buffer.append(name);
+            buffer.append(entry.getShortName());
             buffer.append("\" TYPE=\"");
             buffer.append("folder");
             
@@ -436,10 +448,14 @@ public class SIPCreator extends JApplet {
                 
                 buffer.append("<METS:div LABEL=\"");
                 buffer.append(metadata.getLabel());
-                buffer.append("\" TYPE=\"\">");
+                buffer.append("\" TYPE=\"");
+                buffer.append(metadata.getType());
+                buffer.append("\">");
+                
                 buffer.append("<METS:fptr FILEID=\"");
                 buffer.append(metadata.getID());
                 buffer.append("\"/>");
+                
                 buffer.append("</METS:div>");
             }
         }
@@ -505,8 +521,8 @@ public class SIPCreator extends JApplet {
         return knownMetadataClasses;
     }
     
-    public Vector getKnownMetadataClassNames() {
-        return knownMetadataClassNames;
+    public Vector getKnownMetadataDisplayNames() {
+        return knownMetadataDisplayNames;
     }
     
     public DocumentBuilder getXMLParser() {

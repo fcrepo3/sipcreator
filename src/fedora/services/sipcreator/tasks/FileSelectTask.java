@@ -8,7 +8,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -31,7 +33,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import fedora.services.sipcreator.FileSystemEntry;
@@ -40,7 +42,10 @@ import fedora.services.sipcreator.SelectableEntry;
 import fedora.services.sipcreator.SelectableEntryNode;
 import fedora.services.sipcreator.ZipFileEntry;
 import fedora.services.sipcreator.acceptor.UniversalAcceptor;
+import fedora.services.sipcreator.metadata.Metadata;
+import fedora.services.sipcreator.metadata.MinimalMetadata;
 import fedora.services.sipcreator.utility.CheckRenderer;
+import fedora.services.sipcreator.utility.DOMUtility;
 import fedora.services.sipcreator.utility.GUIUtility;
 
 public class FileSelectTask extends JPanel {
@@ -100,42 +105,40 @@ public class FileSelectTask extends JPanel {
         return (rootNode == null ? null : rootNode.getEntry());
     }
     
-    public void setEnabled(boolean newEnabled) {
-        super.setEnabled(newEnabled);
-
-        changeDirectoryAction.setEnabled(newEnabled);
-    }
-    
     
     private class EventHandler extends MouseAdapter {
         
         public void mouseClicked(MouseEvent me) {
-            if (me.getClickCount() > 1) return;
-            if (!isEnabled()) return;
-            
-            int x = me.getX();
-            int y = me.getY();
-            
-            TreePath path = fileSelectTreeDisplay.getPathForLocation(x, y);
-            if (path == null) return;
-            
-            //The next two lines ensure that the user clicked on the checkbox, not the
-            //icon or the text.  The "-2" is a hack, but seems to work
-            Rectangle bounds = fileSelectTreeDisplay.getPathBounds(path);
-            if (x > bounds.x + fileSelectTreeRenderer.getCheckBoxWidth() - 2) return;
-            
-            SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
-            boolean fullySelected = node.getEntry().getSelectionLevel() == FileSystemEntry.FULLY_SELECTED; 
-            int selectionLevel = fullySelected ? FileSystemEntry.UNSELECTED : FileSystemEntry.FULLY_SELECTED;
-            node.getEntry().setSelectionLevel(selectionLevel, acceptor);
-            
-            SelectableEntryNode nodeParent = (SelectableEntryNode)node.getParent();
-            if (nodeParent != null) {
-                nodeParent.getEntry().setSelectionLevelFromChildren(acceptor);
+            try {
+                if (me.getClickCount() > 1) return;
+                if (!isEnabled()) return;
+                
+                int x = me.getX();
+                int y = me.getY();
+                
+                TreePath path = fileSelectTreeDisplay.getPathForLocation(x, y);
+                if (path == null) return;
+                
+                //The next two lines ensure that the user clicked on the checkbox, not the
+                //icon or the text.  The "-2" is a hack, but seems to work
+                Rectangle bounds = fileSelectTreeDisplay.getPathBounds(path);
+                if (x > bounds.x + fileSelectTreeRenderer.getCheckBoxWidth() - 2) return;
+                
+                SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
+                boolean fullySelected = node.getEntry().getSelectionLevel() == FileSystemEntry.FULLY_SELECTED; 
+                int selectionLevel = fullySelected ? FileSystemEntry.UNSELECTED : FileSystemEntry.FULLY_SELECTED;
+                node.getEntry().setSelectionLevel(selectionLevel, acceptor);
+                
+                SelectableEntryNode nodeParent = (SelectableEntryNode)node.getParent();
+                if (nodeParent != null) {
+                    nodeParent.getEntry().setSelectionLevelFromChildren(acceptor);
+                }
+                
+                fileSelectTreeModel.nodeChanged(node);
+                parent.getMetadataEntryTask().refreshTree();
+            } catch (Exception e) {
+                GUIUtility.showExceptionDialog(parent, e);
             }
-            
-            fileSelectTreeModel.nodeChanged(node);
-            parent.getMetadataEntryTask().refreshTree();
         }
         
     }
@@ -246,10 +249,87 @@ public class FileSelectTask extends JPanel {
             ZipEntry metsEntry = zipFile.getEntry("METS.xml");
             Document metsDocument = parent.getXMLParser().parse(zipFile.getInputStream(metsEntry));
             
-            Element metsNode = (Element)metsDocument.getElementsByTagNameNS(METS_NS, "mets").item(0);
-            Element dmdSecNode = (Element)metsNode.getElementsByTagNameNS(METS_NS, "dmdSec");
-            Element fileSecNode = (Element)metsNode.getElementsByTagNameNS(METS_NS, "fileSec");
-            Element structMapNode = (Element)metsNode.getElementsByTagNameNS(METS_NS, "structMap");
+            Element metsNode = metsDocument.getDocumentElement();
+            Element fileSecNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "fileSec");
+            
+            Hashtable metadataTable = new Hashtable();
+            addMetadataToTable(metadataTable, metsNode.getElementsByTagNameNS(METS_NS, "dmdSec"), "mdWrap", "MDTYPE");
+            addMetadataToTable(metadataTable, fileSecNode.getElementsByTagNameNS(METS_NS, "file"), "FContent", "ID");
+            
+            Element structMapNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "structMap");
+            Element rootDiv = DOMUtility.firstElementNamed(structMapNode, METS_NS, "div");
+            traverseStructMap(rootNode, rootDiv, metadataTable);
+        }
+        
+        private void traverseStructMap(ZipFileEntry currentEntry, Element currentDiv, Hashtable mdTable) {
+            if (currentEntry.getParent() == null) {
+                String dmdidField = currentDiv.getAttribute("DMDID");
+                StringTokenizer tokenizer = new StringTokenizer(dmdidField);
+                
+                while (tokenizer.hasMoreElements()) {
+                    try {
+                        String token = tokenizer.nextToken();
+                        Object metadata = mdTable.get(token);
+                        if (metadata == null) {
+                            continue;
+                        }
+                        currentEntry.getMetadata().add(metadata);
+                    } catch (Exception e) {}
+                }
+            }
+            
+            currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
+            
+            NodeList childList = currentDiv.getChildNodes();
+            for (int ctr = 0; ctr < childList.getLength(); ctr++) {
+                try {
+                    Element currentNode = (Element)childList.item(ctr);
+                    Element child = DOMUtility.firstElementNamed(currentNode, METS_NS, "fptr", false);
+                    
+                    if (child != null) {
+                        String fileid = child.getAttribute("FILEID");
+                        
+                        Metadata metadata = (Metadata)mdTable.get(fileid);
+                        metadata.setLabel(currentNode.getAttribute("LABEL"));
+                        metadata.setType(currentNode.getAttribute("TYPE"));
+                        
+                        currentEntry.getMetadata().add(metadata);
+                        currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
+                    } else {
+                        String name = currentNode.getAttribute("ID");
+                        traverseStructMap(currentEntry.getChild(name), currentNode, mdTable);
+                    }
+                } catch (Exception e) {}
+            }
+        }
+        
+        private void addMetadataToTable(Hashtable table, NodeList childList, String firstChildName, String firstChildAttribute) {
+            for (int ctr = 0; ctr < childList.getLength(); ctr++) {
+                try {
+                    Element current = (Element)childList.item(ctr);
+                    Element firstChild = DOMUtility.firstElementNamed(current, METS_NS, firstChildName);
+                    if (firstChild == null) continue;
+                            
+                    String id = current.getAttribute("ID");
+                    String mdType = firstChild.getAttribute(firstChildAttribute);
+                    String label = firstChild.getAttribute("LABEL");
+                    String type = firstChild.getAttribute("OTHERMDTYPE");
+                            
+                    try {
+                        Class mdClass = Class.forName(mdType);
+                        Constructor constructor = mdClass.getConstructor(new Class[]{Element.class});
+                        Metadata metadata = (Metadata)constructor.newInstance(new Object[]{current});
+                        metadata.setLabel(label);
+                        metadata.setType(type);
+                        table.put(id, metadata);
+                    } catch (Exception e) {
+                        Metadata metadata = new MinimalMetadata(current);
+                        metadata.setLabel(label);
+                        metadata.setType(type);
+                        table.put(id, metadata);
+                    }
+                } catch (Exception e) {}
+            }
         }
         
     }

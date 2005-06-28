@@ -1,10 +1,13 @@
 package fedora.services.sipcreator;
+
 import java.util.Vector;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import fedora.services.sipcreator.utility.DOMUtility;
 
 public class ConversionRules {
 
@@ -177,8 +180,8 @@ public class ConversionRules {
     	if (namespace == null) {
     		namespace = new Namespace();
     	}
-        namespace.alias = ensureAndGetAttribute(node, "alias");
-        namespace.uri = ensureAndGetAttribute(node, "uri");
+        namespace.alias = DOMUtility.getAttribute(node, "alias");
+        namespace.uri = DOMUtility.getAttribute(node, "uri");
         return namespace;
     }
     
@@ -187,16 +190,13 @@ public class ConversionRules {
         	datastream = new DatastreamTemplate();
         }
         datastream.description = getDescription(node);
-        datastream.nodeType = ensureAndGetAttribute(node, "nodeType");
+        datastream.nodeType = DOMUtility.getAttribute(node, "nodeType");
         
-        NodeList children = node.getChildNodes();
-        for (int ctr = 0; ctr < children.getLength(); ctr++) {
-            if (children.item(ctr).getNodeType() != Node.ELEMENT_NODE) continue;
-            Element child = (Element)children.item(ctr);
-            if (!child.getNodeName().equals("attribute")) continue;
-            
-            datastream.attributeNameList.add(ensureAndGetAttribute(child, "name"));
-            datastream.attributeValueList.add(ensureAndGetAttribute(child, "value"));
+        Vector children = DOMUtility.allElementsNamed(node, "attribute");
+        for (int ctr = 0; ctr < children.size(); ctr++) {
+            Element child = (Element)children.get(ctr);
+            datastream.attributeNameList.add(DOMUtility.getAttribute(child, "name"));
+            datastream.attributeValueList.add(DOMUtility.getAttribute(child, "value"));
         }
 
         return datastream;
@@ -208,12 +208,9 @@ public class ConversionRules {
     	}
     	handleDatastream(node, object);
     	
-        NodeList children = node.getChildNodes();
-        for (int ctr = 0; ctr < children.getLength(); ctr++) {
-            if (children.item(ctr).getNodeType() != Node.ELEMENT_NODE) continue;
-            Element child = (Element)children.item(ctr);
-            if (!child.getNodeName().equals("relationship")) continue;
-            
+        Vector children = DOMUtility.allElementsNamed(node, "relationship");
+        for (int ctr = 0; ctr < children.size(); ctr++) {
+            Element child = (Element)children.get(ctr);
             object.relationshipList.add(handleRelationship(child, new Relationship()));
         }
 
@@ -224,56 +221,48 @@ public class ConversionRules {
         if (relationship == null) {
         	relationship = new Relationship();
         }
-        relationship.name = ensureAndGetAttribute(node, "name");
+        relationship.name = DOMUtility.getAttribute(node, "name");
         
-        NodeList children = node.getChildNodes();
-        for (int ctr = 0; ctr < children.getLength(); ctr++) {
-            if (children.item(ctr).getNodeType() != Node.ELEMENT_NODE) continue;
-            Element child = (Element)children.item(ctr);
-            if (!child.getNodeName().equals("target")) continue;
+        Vector children = DOMUtility.allElementsNamed(node, "target");
+        for (int ctr = 0; ctr < children.size(); ctr++) {
+            Element child = (Element)children.get(ctr);
+            String primitive = DOMUtility.getAttribute(child, "primitiveRel");
             
-            String primitive = ensureAndGetAttribute(child, "primitiveRel");
             if (!primitive.equals("tree:child") && !primitive.equals("tree:parent") &&
             	!primitive.equals("tree:descendant") && !primitive.equals("tree:ancestor")) {
                 throw new RuntimeException("Illegal value for primitiveRel attribute: " + primitive);
             }
+            
             relationship.targetRelationshipList.add(primitive);
-            relationship.targetNodeTypeList.add(ensureAndGetAttribute(child, "nodeType"));
+            relationship.targetNodeTypeList.add(DOMUtility.getAttribute(child, "nodeType"));
         }
 
         return relationship;
     }
     
-    private String ensureAndGetAttribute(Element node, String name) {
-        if (!node.hasAttribute(name)) {
-            throw new RuntimeException
-            ("Missing " + name + " attribute in " + node.getNodeName() + " tag");
-        }
-        return node.getAttribute(name);
-    }
-    
     private String getDescription(Element node) {
-        NodeList children = node.getChildNodes();
         String result = null;
         
-        for (int ctr = 0; ctr < children.getLength(); ctr++) {
-            if (children.item(ctr).getNodeType() != Node.ELEMENT_NODE) continue;
-            Element child = (Element)children.item(ctr);
-            if (!child.getNodeName().equals("description")) continue;
-            
-            if (result != null) {
-                throw new RuntimeException("At most 1 description node allowed!");
-            }
-            
-            if (child.getChildNodes().getLength() != 1) {
-                throw new RuntimeException("Invalid description tag");
-            }
-            if (child.getFirstChild().getNodeType() != Node.TEXT_NODE) {
-                throw new RuntimeException("Invalid description tag");
-            }
-            
-            result = child.getFirstChild().getNodeValue(); 
+        Vector children = DOMUtility.allElementsNamed(node, "description");
+        if (children.size() == 0) {
+            return "";
         }
+        if (children.size() > 1) { 
+            throw new RuntimeException("At most 1 description node allowed!");
+        }
+            
+        Element child = (Element)children.get(0);
+        if (child.getChildNodes().getLength() == 0) {
+            return "";
+        }
+        if (child.getChildNodes().getLength() > 1) {
+            throw new RuntimeException("Invalid description tag");
+        }
+        if (child.getFirstChild().getNodeType() != Node.TEXT_NODE) {
+            throw new RuntimeException("Invalid description tag");
+        }
+            
+        result = child.getFirstChild().getNodeValue(); 
         
         return result == null ? "" : result;
     }

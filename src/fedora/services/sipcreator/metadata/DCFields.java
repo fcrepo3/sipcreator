@@ -3,8 +3,6 @@ package fedora.services.sipcreator.metadata;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
@@ -19,13 +17,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import fedora.services.sipcreator.utility.DOMUtility;
 import fedora.services.sipcreator.utility.StreamUtility;
 import fedora.services.sipcreator.utility.TableSorter;
 
@@ -44,6 +41,11 @@ public class DCFields extends Metadata {
 	public static final String DC_PREFIX = "dc";
 	public static final String DC_NS = "http://purl.org/dc/elements/1.1/";
 			
+    public static final String[] DC_FIELDS =
+    {"title", "creator", "subject", "description", "publisher", 
+    "contributor", "date", "type", "format", "identifier", 
+    "source", "language", "relation", "coverage", "rights"};
+    
     private Vector titles = new Vector();
     private Vector creators = new Vector();
     private Vector subjects = new Vector();
@@ -60,61 +62,53 @@ public class DCFields extends Metadata {
     private Vector coverages = new Vector();
     private Vector rights = new Vector();
 
-    private StringBuffer currentContent;
-
     public DCFields() {
-        setHint("Dublin Core");
     }
-
-    public DCFields(InputStream in)
-    throws ParserConfigurationException, SAXException, IOException {
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-        spf.setNamespaceAware(true);
-        SAXParser parser = spf.newSAXParser();
-
-        parser.parse(in, this);
-        setHint("Dublin Core");
-    }
-
-    public void startElement(String uri, String localName, String qName, Attributes attrs) {
-        currentContent = new StringBuffer();
-    }
-
-    public void characters(char[] ch, int start, int length) {
-        currentContent.append(ch, start, length);
-    }
-
-    public void endElement(String uri, String localName, String qName) {
-        if (localName.equals("title")) {
-            titles().add(currentContent.toString());
-        } else if (localName.equals("creator")) {
-            creators().add(currentContent.toString());
-        } else if (localName.equals("subject")) {
-            subjects().add(currentContent.toString());
-        } else if (localName.equals("description")) {
-            descriptions().add(currentContent.toString());
-        } else if (localName.equals("publisher")) {
-            publishers().add(currentContent.toString());
-        } else if (localName.equals("contributor")) {
-            contributors().add(currentContent.toString());
-        } else if (localName.equals("date")) {
-            dates().add(currentContent.toString());
-        } else if (localName.equals("type")) {
-            types().add(currentContent.toString());
-        } else if (localName.equals("format")) {
-            formats().add(currentContent.toString());
-        } else if (localName.equals("identifier")) {
-            identifiers().add(currentContent.toString());
-        } else if (localName.equals("source")) {
-            sources().add(currentContent.toString());
-        } else if (localName.equals("language")) {
-            languages().add(currentContent.toString());
-        } else if (localName.equals("relation")) {
-            relations().add(currentContent.toString());
-        } else if (localName.equals("coverage")) {
-            coverages().add(currentContent.toString());
-        } else if (localName.equals("rights")) {
-            rights().add(currentContent.toString());
+    
+    public DCFields(Element xmlNode) {
+        super(xmlNode);
+        
+        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS("http://www.loc.gov/METS/", "xmlData").item(0);
+        Element oaiDCNode = DOMUtility.firstElementNamed(xmlDataNode, OAIDC_NS, "dc");
+        NodeList childList = oaiDCNode.getChildNodes();
+        for (int ctr = 0; ctr < childList.getLength(); ctr++) {
+            try {
+                Node currentNode = childList.item(ctr);
+                
+                if (!currentNode.getNamespaceURI().equals(DC_NS)) {
+                    continue;
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 0])) {
+                    titles.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 1])) {
+                    creators.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 2])) {
+                    subjects.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 3])) {
+                    descriptions.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 4])) {
+                    publishers.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 5])) {
+                    contributors.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 6])) {
+                    dates.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 7])) {
+                    types.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 8])) {
+                    formats.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[ 9])) {
+                    identifiers.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[10])) {
+                    sources.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[11])) {
+                    languages.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[12])) {
+                    relations.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[13])) {
+                    coverages.add(currentNode.getFirstChild().getNodeValue());
+                } else if (currentNode.getLocalName().equals(DC_FIELDS[14])) {
+                    rights.add(currentNode.getFirstChild().getNodeValue());
+                }
+            } catch (Exception e) {}
         }
     }
 
@@ -214,6 +208,10 @@ public class DCFields extends Metadata {
         }
     }
 
+    public String getHint() {
+        return "DC: " + getLabel();
+    }
+    
     public MetadataPanel getPanel() {
         return new DCFieldsPanel(this);
     }
@@ -221,11 +219,6 @@ public class DCFields extends Metadata {
     private static class DCFieldsPanel extends MetadataPanel implements ActionListener {
 
         private static final long serialVersionUID = 2151470252809182456L;
-        
-        public static final String[] DC_TYPES =
-        {"title", "creator", "subject", "description", "publisher", 
-        "contributor", "date", "type", "format", "identifier", 
-        "source", "language", "relation", "coverage", "right"};
         
         private DCFields metadata;
         
@@ -242,7 +235,7 @@ public class DCFields extends Metadata {
             dcDataDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             dcDataDisplay.setCellSelectionEnabled(false);
             dcDataDisplay.setRowSelectionAllowed(true);
-            dcDataDisplay.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(new JComboBox(DC_TYPES)));
+            dcDataDisplay.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(new JComboBox(DC_FIELDS)));
             
             JScrollPane scrollPane = new JScrollPane(dcDataDisplay);
             scrollPane.setBorder(null);
@@ -275,7 +268,7 @@ public class DCFields extends Metadata {
             if (cmd == null) {
                 return;
             } else if (cmd.equals("Add Row")) {
-                dcDataModel.addRow(new Object[]{DC_TYPES[0], ""});
+                dcDataModel.addRow(new Object[]{DC_FIELDS[0], ""});
             } else if (cmd.equals("Remove Row")) {
                 int index = dcDataDisplay.getSelectedRow();
                 if (index < 0) return;
@@ -289,39 +282,39 @@ public class DCFields extends Metadata {
             while (dcDataModel.getRowCount() > 0) {
                 dcDataModel.removeRow(0);
             }
-            updateTableField(DC_TYPES[ 0], metadata.titles());
-            updateTableField(DC_TYPES[ 1], metadata.creators());
-            updateTableField(DC_TYPES[ 2], metadata.subjects());
-            updateTableField(DC_TYPES[ 3], metadata.descriptions());
-            updateTableField(DC_TYPES[ 4], metadata.publishers());
-            updateTableField(DC_TYPES[ 5], metadata.contributors());
-            updateTableField(DC_TYPES[ 6], metadata.dates());
-            updateTableField(DC_TYPES[ 7], metadata.types());
-            updateTableField(DC_TYPES[ 8], metadata.formats());
-            updateTableField(DC_TYPES[ 9], metadata.identifiers());
-            updateTableField(DC_TYPES[10], metadata.sources());
-            updateTableField(DC_TYPES[11], metadata.languages());
-            updateTableField(DC_TYPES[12], metadata.relations());
-            updateTableField(DC_TYPES[13], metadata.coverages());
-            updateTableField(DC_TYPES[14], metadata.rights());
+            updateTableField(DC_FIELDS[ 0], metadata.titles());
+            updateTableField(DC_FIELDS[ 1], metadata.creators());
+            updateTableField(DC_FIELDS[ 2], metadata.subjects());
+            updateTableField(DC_FIELDS[ 3], metadata.descriptions());
+            updateTableField(DC_FIELDS[ 4], metadata.publishers());
+            updateTableField(DC_FIELDS[ 5], metadata.contributors());
+            updateTableField(DC_FIELDS[ 6], metadata.dates());
+            updateTableField(DC_FIELDS[ 7], metadata.types());
+            updateTableField(DC_FIELDS[ 8], metadata.formats());
+            updateTableField(DC_FIELDS[ 9], metadata.identifiers());
+            updateTableField(DC_FIELDS[10], metadata.sources());
+            updateTableField(DC_FIELDS[11], metadata.languages());
+            updateTableField(DC_FIELDS[12], metadata.relations());
+            updateTableField(DC_FIELDS[13], metadata.coverages());
+            updateTableField(DC_FIELDS[14], metadata.rights());
         }
         
         public void updateMetadata() {
-            transferDataTypeToDCFields(DC_TYPES[ 0], metadata.titles());
-            transferDataTypeToDCFields(DC_TYPES[ 1], metadata.creators());
-            transferDataTypeToDCFields(DC_TYPES[ 2], metadata.subjects());
-            transferDataTypeToDCFields(DC_TYPES[ 3], metadata.descriptions());
-            transferDataTypeToDCFields(DC_TYPES[ 4], metadata.publishers());
-            transferDataTypeToDCFields(DC_TYPES[ 5], metadata.contributors());
-            transferDataTypeToDCFields(DC_TYPES[ 6], metadata.dates());
-            transferDataTypeToDCFields(DC_TYPES[ 7], metadata.types());
-            transferDataTypeToDCFields(DC_TYPES[ 8], metadata.formats());
-            transferDataTypeToDCFields(DC_TYPES[ 9], metadata.identifiers());
-            transferDataTypeToDCFields(DC_TYPES[10], metadata.sources());
-            transferDataTypeToDCFields(DC_TYPES[11], metadata.languages());
-            transferDataTypeToDCFields(DC_TYPES[12], metadata.relations());
-            transferDataTypeToDCFields(DC_TYPES[13], metadata.coverages());
-            transferDataTypeToDCFields(DC_TYPES[14], metadata.rights());
+            transferDataTypeToDCFields(DC_FIELDS[ 0], metadata.titles());
+            transferDataTypeToDCFields(DC_FIELDS[ 1], metadata.creators());
+            transferDataTypeToDCFields(DC_FIELDS[ 2], metadata.subjects());
+            transferDataTypeToDCFields(DC_FIELDS[ 3], metadata.descriptions());
+            transferDataTypeToDCFields(DC_FIELDS[ 4], metadata.publishers());
+            transferDataTypeToDCFields(DC_FIELDS[ 5], metadata.contributors());
+            transferDataTypeToDCFields(DC_FIELDS[ 6], metadata.dates());
+            transferDataTypeToDCFields(DC_FIELDS[ 7], metadata.types());
+            transferDataTypeToDCFields(DC_FIELDS[ 8], metadata.formats());
+            transferDataTypeToDCFields(DC_FIELDS[ 9], metadata.identifiers());
+            transferDataTypeToDCFields(DC_FIELDS[10], metadata.sources());
+            transferDataTypeToDCFields(DC_FIELDS[11], metadata.languages());
+            transferDataTypeToDCFields(DC_FIELDS[12], metadata.relations());
+            transferDataTypeToDCFields(DC_FIELDS[13], metadata.coverages());
+            transferDataTypeToDCFields(DC_FIELDS[14], metadata.rights());
         }
         
         private void transferDataTypeToDCFields(String type, List dest) {

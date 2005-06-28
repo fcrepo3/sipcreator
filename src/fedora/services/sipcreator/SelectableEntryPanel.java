@@ -16,6 +16,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.metadata.MetadataPanel;
@@ -29,7 +31,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
     
     private JTextField mimeTypeField = new JTextField(10);
     
-    private JTextField labelField = new JTextField(10);
+    private JTextField entryLabelField = new JTextField(10);
     
     private JComboBox classBox;
     
@@ -45,7 +47,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
 
         entry = newEntry;
         creator = newCreator;
-        classBox = new JComboBox(creator.getKnownMetadataClassNames());
+        classBox = new JComboBox(creator.getKnownMetadataDisplayNames());
         
         metadataPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         
@@ -76,11 +78,11 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         button.addActionListener(this);
         tempP1.add(button);
         
-        tempP1.add(Box.createHorizontalStrut(5));
-
-        button = new JButton("Rename Tab");
-        button.addActionListener(this);
-        tempP1.add(button);
+//        tempP1.add(Box.createHorizontalStrut(5));
+//
+//        button = new JButton("Rename Tab");
+//        button.addActionListener(this);
+//        tempP1.add(button);
         
         result.add(tempP1);
         
@@ -91,7 +93,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         tempP1.add(Box.createHorizontalStrut(5));
         
-        tempP1.add(GUIUtility.addLabelLeft("Label: ", labelField));
+        tempP1.add(GUIUtility.addLabelLeft("Label: ", entryLabelField));
 
         result.add(tempP1);
         
@@ -115,8 +117,8 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
             if (index == -1) return;
             removeMetadataAction(index);
         } else if (cmd.equals("Rename Tab")) {
-            if (index == -1) return;
-            renameTabAction(index);
+//            if (index == -1) return;
+//            renameTabAction(index);
         }
     }
     
@@ -143,16 +145,16 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         entry.getMetadata().remove(panel.getMetadata());
     }
     
-    private void renameTabAction(int index) {
-        String result = JOptionPane.showInputDialog
-        (this, "Please enter the new tab name", metadataPane.getTitleAt(index));
-        
-        if (result == null || result.length() == 0) return;
-        
-        MetadataPanelWrapper panel = (MetadataPanelWrapper)metadataPane.getComponentAt(index);
-        panel.getMetadata().setHint(result);
-        metadataPane.setTitleAt(index, result);
-    }
+//    private void renameTabAction(int index) {
+//        String result = JOptionPane.showInputDialog
+//        (this, "Please enter the new tab name", metadataPane.getTitleAt(index));
+//        
+//        if (result == null || result.length() == 0) return;
+//        
+//        MetadataPanelWrapper panel = (MetadataPanelWrapper)metadataPane.getComponentAt(index);
+//        panel.getMetadata().setHint(result);
+//        metadataPane.setTitleAt(index, result);
+//    }
     
     
     public void updateFromMetadata() {
@@ -162,7 +164,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         Vector metadataList = entry.getMetadata();
         mimeTypeField.setText(entry.getMimeType());
-        labelField.setText(entry.getLabel());
+        entryLabelField.setText(entry.getLabel());
         
         for (int ctr = 0; ctr < metadataList.size(); ctr++) {
             Metadata metadata = (Metadata)metadataList.get(ctr);
@@ -172,7 +174,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
     
     public void updateMetadata() {
         entry.setMimeType(mimeTypeField.getText());
-        entry.setLabel(labelField.getText());
+        entry.setLabel(entryLabelField.getText());
         for (int ctr = 0; ctr < metadataPane.getTabCount(); ctr++) {
             MetadataPanelWrapper mpw = (MetadataPanelWrapper)metadataPane.getComponentAt(ctr);
             mpw.updateMetadata();
@@ -180,17 +182,17 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
     }
     
     
-    private class MetadataPanelWrapper extends JPanel implements ActionListener {
+    private class MetadataPanelWrapper extends JPanel implements ActionListener, DocumentListener {
     
         private static final long serialVersionUID = 3257002172494263094L;
 
         private MetadataPanel metadataPanel;
         
-        private JTextField labelField = new JTextField();
+        private JTextField metadataLabelField = new JTextField();
         
-        private JComboBox typeBox = new JComboBox(creator.getConversionRulesTask().getDatastreamTemplates());
+        private JComboBox metadataTypeBox = new JComboBox(creator.getConversionRulesTask().getDatastreamTemplates());
         
-        private JTextField nameField = new JTextField();
+        private JTextField metadataNameField = new JTextField();
         
         public MetadataPanelWrapper(MetadataPanel newMetadataPanel) {
             super(new BorderLayout());
@@ -198,9 +200,9 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
             metadataPanel = newMetadataPanel;
             
             JPanel temp = new JPanel(new GridLayout(3, 1, 5, 5));
-            temp.add(GUIUtility.addLabelLeft("Label: ", labelField));
-            temp.add(GUIUtility.addLabelLeft("Type: ", typeBox));
-            temp.add(GUIUtility.addLabelLeft("ID: ", nameField));
+            temp.add(GUIUtility.addLabelLeft("Label: ", metadataLabelField));
+            temp.add(GUIUtility.addLabelLeft("Type: ", metadataTypeBox));
+            temp.add(GUIUtility.addLabelLeft("ID: ", metadataNameField));
             
             HideablePanel htemp = new HideablePanel(temp, "Common Metadata Attributes");
             htemp.setResizeable(false);
@@ -208,12 +210,13 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
             add(htemp, BorderLayout.NORTH);
             add(metadataPanel, BorderLayout.CENTER);
             
+            metadataTypeBox.setEditable(true);
+            metadataNameField.setEnabled(false);
+
             updateFromMetadata();
             
-            labelField.addActionListener(this);
-            typeBox.addActionListener(this);
-            typeBox.setEditable(true);
-            nameField.setEnabled(false);
+            metadataLabelField.getDocument().addDocumentListener(this);
+            metadataTypeBox.addActionListener(this);
         }
         
         
@@ -227,15 +230,15 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         
         public void actionPerformed(ActionEvent ae) {
-            if (ae.getSource() == typeBox && ae.getActionCommand().equals("comboBoxEdited") && typeBox.getSelectedIndex() == -1) {
+            if (ae.getSource() == metadataTypeBox && ae.getActionCommand().equals("comboBoxEdited") && metadataTypeBox.getSelectedIndex() == -1) {
                 int choice = JOptionPane.showConfirmDialog(creator,
-                        "Would you like to add \"" + typeBox.getSelectedItem() + "\" as a new datastream template?",
+                        "Would you like to add \"" + metadataTypeBox.getSelectedItem() + "\" as a new datastream template?",
                         "Add New Template", JOptionPane.YES_NO_OPTION);
                 if (choice == JOptionPane.YES_OPTION) {
                     ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate();
-                    newDT.nodeType = typeBox.getSelectedItem().toString();
+                    newDT.nodeType = metadataTypeBox.getSelectedItem().toString();
                     creator.getConversionRulesTask().addDatastreamTemplate(newDT);
-                    typeBox.setSelectedItem(newDT);
+                    metadataTypeBox.setSelectedItem(newDT);
                 }
             }
             updateMetadata();
@@ -245,27 +248,45 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         public void updateFromMetadata() {
             Object template = creator.getConversionRulesTask().getDatastreamTemplate(metadataPanel.getMetadata().getType());
             if (template != null) {
-                typeBox.setSelectedItem(template);
+                metadataTypeBox.setSelectedItem(template);
             } else {
-                typeBox.setSelectedItem(metadataPanel.getMetadata().getType());
+                metadataTypeBox.setSelectedItem(metadataPanel.getMetadata().getType());
             }
             
-            labelField.setText(metadataPanel.getMetadata().getLabel());
-            nameField.setText(metadataPanel.getMetadata().getID());
+            metadataLabelField.setText(metadataPanel.getMetadata().getLabel());
+            metadataNameField.setText(metadataPanel.getMetadata().getID());
             
             metadataPanel.updateFromMetadata();
         }
         
         public void updateMetadata() {
-            getMetadata().setLabel(labelField.getText());
+            getMetadata().setLabel(metadataLabelField.getText());
             
-            if (typeBox.getSelectedItem() != null) {
-                getMetadata().setType(typeBox.getSelectedItem().toString());
+            if (metadataTypeBox.getSelectedItem() != null) {
+                getMetadata().setType(metadataTypeBox.getSelectedItem().toString());
             } else {
                 getMetadata().setType("");
             }
             
             metadataPanel.updateMetadata();
+        }
+
+
+        public void changedUpdate(DocumentEvent e) {
+            updateMetadata();
+            metadataPane.setTitleAt(metadataPane.getSelectedIndex(), getMetadata().getHint());
+        }
+
+
+        public void insertUpdate(DocumentEvent e) {
+            updateMetadata();
+            metadataPane.setTitleAt(metadataPane.getSelectedIndex(), getMetadata().getHint());
+        }
+
+
+        public void removeUpdate(DocumentEvent e) {
+            updateMetadata();
+            metadataPane.setTitleAt(metadataPane.getSelectedIndex(), getMetadata().getHint());
         }
         
     }

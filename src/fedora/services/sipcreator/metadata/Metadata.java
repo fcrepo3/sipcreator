@@ -1,8 +1,8 @@
 package fedora.services.sipcreator.metadata;
 
-import org.xml.sax.helpers.DefaultHandler;
+import org.w3c.dom.Element;
 
-public abstract class Metadata extends DefaultHandler {
+public abstract class Metadata {
 
     private static long currentID = 0;
 
@@ -10,13 +10,25 @@ public abstract class Metadata extends DefaultHandler {
         return currentID++;
     }
     
-    private String id = Long.toString(getNextID());
+    private String id;
     
     private String label = new String();
     
     private String type = new String();
     
-    private String hint = new String();
+    public Metadata() {
+        id = Long.toString(getNextID());
+    }
+    
+    public Metadata(Element xmlNode) {
+        if (xmlNode.getNamespaceURI().equals("http://www.loc.gov/METS/") && xmlNode.getLocalName().equals("dmdSec")) {
+            id = xmlNode.getAttribute("ID");
+        } else if (xmlNode.getNamespaceURI().equals("http://www.loc.gov/METS/") && xmlNode.getLocalName().equals("file")) {
+            id = xmlNode.getAttribute("ID");
+        } else {
+            id = Long.toString(getNextID());
+        }
+    }
     
     public String getID() {
         return id;
@@ -30,9 +42,7 @@ public abstract class Metadata extends DefaultHandler {
         return type;
     }
     
-    public String getHint() {
-        return hint;
-    }
+    public abstract String getHint();
     
     public void setLabel(String newLabel) {
         label = newLabel;
@@ -40,10 +50,6 @@ public abstract class Metadata extends DefaultHandler {
     
     public void setType(String newType) {
         type = newType;
-    }
-    
-    public void setHint(String newHint) {
-        hint = newHint;
     }
     
     public abstract MetadataPanel getPanel();
