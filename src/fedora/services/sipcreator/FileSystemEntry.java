@@ -19,8 +19,8 @@ public class FileSystemEntry extends SelectableEntry {
     private FileSystemEntry parent;
     
     private SIPCreator creator;
+
     
-    //public SIPEntry(File newFile, SIPEntry newParent, int newSelectionLevel) {
     public FileSystemEntry(File newFile, FileSystemEntry newParent, SIPCreator newCreator) {
         creator = newCreator;
         

@@ -4,10 +4,13 @@ import org.w3c.dom.Element;
 
 public abstract class Metadata {
 
-    private static long currentID = 0;
+    //private static long currentID = 0;
 
     public static synchronized long getNextID() {
-        return currentID++;
+        long result = System.currentTimeMillis();
+        try { Thread.sleep(10); }
+        catch (InterruptedException ie) {}
+        return result;
     }
     
     private String id;

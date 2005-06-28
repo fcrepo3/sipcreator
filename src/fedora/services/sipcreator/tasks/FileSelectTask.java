@@ -279,6 +279,10 @@ public class FileSelectTask extends JPanel {
             }
             
             currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
+            String id = currentDiv.getAttribute("CONTENTIDS");
+            if (mdTable.get(id) != null) {
+                currentEntry.setMimeType(mdTable.get(id).toString());
+            }
             
             NodeList childList = currentDiv.getChildNodes();
             for (int ctr = 0; ctr < childList.getLength(); ctr++) {
@@ -307,8 +311,12 @@ public class FileSelectTask extends JPanel {
             for (int ctr = 0; ctr < childList.getLength(); ctr++) {
                 try {
                     Element current = (Element)childList.item(ctr);
-                    Element firstChild = DOMUtility.firstElementNamed(current, METS_NS, firstChildName);
-                    if (firstChild == null) continue;
+                    Element firstChild = DOMUtility.firstElementNamed(current, METS_NS, firstChildName, false);
+                    if (firstChild == null) {
+                        //Ensures that this file entry contains an FLocat subelement
+                        DOMUtility.firstElementNamed(current, METS_NS, "FLocat");
+                        table.put(current.getAttribute("ID"), current.getAttribute("MIMETYPE"));
+                    }
                             
                     String id = current.getAttribute("ID");
                     String mdType = firstChild.getAttribute(firstChildAttribute);

@@ -33,6 +33,8 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
     
     private JTextField entryLabelField = new JTextField(10);
     
+    private JTextField entryIDField = new JTextField(10);
+    
     private JComboBox classBox;
     
     private JTabbedPane metadataPane = new JTabbedPane(JTabbedPane.TOP);
@@ -48,6 +50,8 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         entry = newEntry;
         creator = newCreator;
         classBox = new JComboBox(creator.getKnownMetadataDisplayNames());
+        entryIDField.setEditable(false);
+        entryIDField.setText(entry.getID());
         
         metadataPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         
@@ -78,6 +82,9 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         button.addActionListener(this);
         tempP1.add(button);
         
+        tempP1.add(Box.createHorizontalStrut(5));
+        
+        tempP1.add(GUIUtility.addLabelLeft("ID: ", entryIDField));
 //        tempP1.add(Box.createHorizontalStrut(5));
 //
 //        button = new JButton("Rename Tab");

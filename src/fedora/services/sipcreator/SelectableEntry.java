@@ -44,7 +44,7 @@ public abstract class SelectableEntry {
     public static final int FULLY_SELECTED = 4;
     
     
-    private String id = Long.toString(Metadata.getNextID());
+    private String id;
     
     protected Vector metadataList = new Vector();
     
@@ -53,6 +53,15 @@ public abstract class SelectableEntry {
     protected String label = new String();
     
     protected int selectionLevel;
+    
+    
+    public SelectableEntry() {
+        id = Long.toString(Metadata.getNextID());
+    }
+    
+    public SelectableEntry(String newID) {
+        id = newID;
+    }
     
     
     public String getLabel() {

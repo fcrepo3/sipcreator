@@ -4,25 +4,22 @@ D! = Done, not sure if it should remain that way though
 D? = I think its done, but it might not be done right
 Dx = Undone
 
-   General GUI:
-   * Make GUI pretty
-     * Use icons rather than text
-     * Get some decent icons
-   * Find a nice way to display actions available
-D  * Make Hideable panels optionally resizeable
-D  * Changed "File System" to "File Select"
-D  * Button to switch UI Look and Feels
-D  * Toolbar at top
-D  * All extra space goes to right hand pane
-De * Fix up the "hide unchecked files" button
-Dx   * Remove focus box
-D? * Use tooltips
-D  * Use min/max buttons as show/hide metaphor in HideablePanel
-D  * Use a special panel as the grip to resize HideablePanel objects
-D  * Left tabs = tasks
-D  * Remove "load crules" buttons from toolbar
+   Documentation:
+   * Javadoc all public methods
+   * Javadoc all private/protected methods
+   * Javadoc all classes
+   * Inline comment unclear code sections
+   * Explain changes/additions to the subset of METS
+   * Other observations on program
+   **Document coding practices for metadata plugin writers
+
+   Testing and Logging:
+   * Set up JUnit tests
+   * Integrate Log4j
 
    General System:
+   * Embed CRules file into METS file
+   * BUG: saving over current .zip file causes JVM to crash
    * Remove cruft libraries.  Log4j?
    * Saving of SIP file
 D    * How to get the "type" in the structMap section of the METS file
@@ -30,19 +27,29 @@ D    * How to get the "type" in the structMap section of the METS file
      * What to do about unknown mime types?
      * Should there be a human readable relationship between file id's and their
        component metadata id's?
-     * Fix the header creation
-     * How do we attach multiple metadata records to the root of the tree?
-   * Loading of a SIP file
+D    * Fix the header creation
+D    * How do we attach multiple metadata records to the root of the tree?
+D  * Loading of a SIP file
 D    * Read in individual SIP tree
-     * Parse in METS file
+D    * Parse in METS file
+D      * Read in entry information
+D      * Read in metadata
+D      * Associate each entry with its metadata
+         - Had to use extra unused fields in METS
+D      * Read in MIMETYPEs
+D      * set Metadata ID counter
    * MIME Type detection
      * Use all 3?  Give the user the power to switch?
-D    * Integrate jMimeMagic
+     * jMimeMagic
+D      * Integrate
+       * Replace oro with java regexs
        * Edit Magic.xml
        * Evaluate usefulness
-     * Integrate JAF from Sun
+     * JAF from Sun
+       * Integrate
        * Evaluate usefulness
      * Tool linked from Sandy
+       * Integrate
        * Evaluate usefulnes
    * Integrate JHove
    * Make sure that the different "task" views all update the same data, and
@@ -74,6 +81,7 @@ D  * Using a real regex language
 D  * Escape . to mean \. and * to mean .*
 
    Metadata Entry Task:
+   * Allow for the user to "tack on" a METS file?
    * Develop automatic generation of metadata
      * Based on location in hierarchy?
      * Based on Parent's metadata?
@@ -82,6 +90,7 @@ D  * Escape . to mean \. and * to mean .*
 D  * Use hideable panels
 D  * Change tab wrap style to scroll
 D  * Just use hints for metadata tabs
+     * Metadata tabs labeled as "hint" + "label"
 D  * Use METS ID safe strings (no ":", " ", and limit length to 64)
      - Used unique number (unique across JVM)
 D  * Integrate Filtering
@@ -115,3 +124,22 @@ D  * Merge Datastream/Object template panels
 D  * Position relationship list at bottom right of DOT panel
 D  * Import it
 D  * Slightly confusing/inaccurate way of representing primitiveRels     
+
+   General GUI:
+   * Make GUI pretty
+     * Use icons rather than text
+     * Get some decent icons
+   * Find a nice way to display actions available
+D  * Make Hideable panels optionally resizeable
+D  * Changed "File System" to "File Select"
+D  * Button to switch UI Look and Feels
+D  * Toolbar at top
+D  * All extra space goes to right hand pane
+De * Fix up the "hide unchecked files" button
+Dx   * Remove focus box
+D? * Use tooltips
+D  * Use min/max buttons as show/hide metaphor in HideablePanel
+D  * Use a special panel as the grip to resize HideablePanel objects
+D  * Left tabs = tasks
+D  * Remove "load crules" buttons from toolbar
+

@@ -362,6 +362,8 @@ public class SIPCreator extends JApplet {
             buffer.append(entry.getLabel());
             buffer.append("\" ID=\"");
             buffer.append(entry.getShortName());
+            buffer.append("\" CONTENTIDS=\"");
+            buffer.append(entry.getID());
             buffer.append("\" TYPE=\"file\">");
             
             buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
