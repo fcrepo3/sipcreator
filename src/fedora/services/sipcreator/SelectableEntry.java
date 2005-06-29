@@ -56,7 +56,7 @@ public abstract class SelectableEntry {
     
     
     public SelectableEntry() {
-        id = Long.toString(Metadata.getNextID());
+        id = Metadata.getNextID();
     }
     
     public SelectableEntry(String newID) {

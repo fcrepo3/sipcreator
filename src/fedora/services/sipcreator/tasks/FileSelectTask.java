@@ -279,10 +279,10 @@ public class FileSelectTask extends JPanel {
 //            }
 //            
             currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
-            String id = currentDiv.getAttribute("CONTENTIDS");
-            if (mdTable.get(id) != null) {
-                currentEntry.setMimeType(mdTable.get(id).toString());
-            }
+//            String id = currentDiv.getAttribute("CONTENTIDS");
+//            if (mdTable.get(id) != null) {
+//                currentEntry.setMimeType(mdTable.get(id).toString());
+//            }
             
             NodeList childList = currentDiv.getChildNodes();
             for (int ctr = 0; ctr < childList.getLength(); ctr++) {
@@ -292,6 +292,11 @@ public class FileSelectTask extends JPanel {
                     
                     if (child != null) {
                         String fileid = child.getAttribute("FILEID");
+                        
+                        if (currentNode.getAttribute("TYPE").equals("content") &&
+                                mdTable.get(child.getAttribute("FILEID")) != null) {
+                            currentEntry.setMimeType(mdTable.get(child.getAttribute("FILEID")).toString());
+                        }
                         
                         Metadata metadata = (Metadata)mdTable.get(fileid);
                         metadata.setLabel(currentNode.getAttribute("LABEL"));
@@ -319,7 +324,7 @@ public class FileSelectTask extends JPanel {
                     }
                             
                     String id = current.getAttribute("ID");
-                    String mdType = firstChild.getAttribute("ID");
+                    String mdType = firstChild.getAttribute("USE");
                     String label = firstChild.getAttribute("LABEL");
                     String type = firstChild.getAttribute("OTHERMDTYPE");
                             

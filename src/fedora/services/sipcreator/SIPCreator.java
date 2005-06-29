@@ -306,9 +306,9 @@ public class SIPCreator extends JApplet {
         
         private void handleFileData(StringBuffer buffer, String name, SelectableEntry entry) {
             buffer.append("<METS:file ID=\"");
-            buffer.append(entry.getID());
+            buffer.append(StreamUtility.enc(entry.getID()));
             buffer.append("\" MIMETYPE=\"");
-            buffer.append(entry.getMimeType());
+            buffer.append(StreamUtility.enc(entry.getMimeType()));
             buffer.append("\">");
             buffer.append("<METS:FLocat LOCTYPE=\"URL\" xlink:href=\"file:///");
             buffer.append(StreamUtility.enc(name.replaceAll("\\\\", "/")));
@@ -320,10 +320,10 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:file ID=\"");
-                buffer.append(metadata.getID());
+                buffer.append(StreamUtility.enc(metadata.getID()));
                 buffer.append("\" MIMETYPE=\"text/xml\">");
-                buffer.append("<METS:FContent ID=\"");
-                buffer.append(metadata.getClass().getName());
+                buffer.append("<METS:FContent USE=\"");
+                buffer.append(StreamUtility.enc(metadata.getClass().getName()));
                 buffer.append("\"><METS:xmlData>");
                 buffer.append(metadata.getAsXML());
                 buffer.append("</METS:xmlData></METS:FContent>");
@@ -333,16 +333,16 @@ public class SIPCreator extends JApplet {
         
         private void handleFileStructure(StringBuffer buffer, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
-            buffer.append(entry.getLabel());
+            buffer.append(StreamUtility.enc(entry.getLabel()));
             buffer.append("\" ID=\"");
-            buffer.append(entry.getShortName());
-            buffer.append("\" CONTENTIDS=\"");
-            buffer.append(entry.getID());
+            buffer.append(StreamUtility.enc(entry.getShortName()));
+            //buffer.append("\" CONTENTIDS=\"");
+            //buffer.append(StreamUtility.enc(entry.getID()));
             buffer.append("\" TYPE=\"file\">");
             
             buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
             buffer.append("<METS:fptr FILEID=\"");
-            buffer.append(entry.getID());
+            buffer.append(StreamUtility.enc(entry.getID()));
             buffer.append("\"/>");
             buffer.append("</METS:div>");
             
@@ -351,13 +351,13 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:div LABEL=\"");
-                buffer.append(metadata.getLabel());
+                buffer.append(StreamUtility.enc(metadata.getLabel()));
                 buffer.append("\" TYPE=\"");
-                buffer.append(metadata.getType());
+                buffer.append(StreamUtility.enc(metadata.getType()));
                 buffer.append("\">");
                 
                 buffer.append("<METS:fptr FILEID=\"");
-                buffer.append(metadata.getID());
+                buffer.append(StreamUtility.enc(metadata.getID()));
                 buffer.append("\"/>");
                 
                 buffer.append("</METS:div>");
@@ -376,10 +376,10 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:file ID=\"");
-                buffer.append(metadata.getID());
+                buffer.append(StreamUtility.enc(metadata.getID()));
                 buffer.append("\" MIMETYPE=\"text/xml\">");
-                buffer.append("<METS:FContent ID=\"");
-                buffer.append(metadata.getClass().getName());
+                buffer.append("<METS:FContent USE=\"");
+                buffer.append(StreamUtility.enc(metadata.getClass().getName()));
                 buffer.append("\"><METS:xmlData>");
                 buffer.append(metadata.getAsXML());
                 buffer.append("</METS:xmlData></METS:FContent>");
@@ -389,9 +389,9 @@ public class SIPCreator extends JApplet {
         
         private void startDirectoryStructure(StringBuffer buffer, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
-            buffer.append(entry.getLabel());
+            buffer.append(StreamUtility.enc(entry.getLabel()));
             buffer.append("\" ID=\"");
-            buffer.append(entry.getShortName());
+            buffer.append(StreamUtility.enc(entry.getShortName()));
             buffer.append("\" TYPE=\"");
             buffer.append("folder");
             
@@ -419,13 +419,13 @@ public class SIPCreator extends JApplet {
                 Metadata metadata = (Metadata)metadataList.get(ctr);
                 
                 buffer.append("<METS:div LABEL=\"");
-                buffer.append(metadata.getLabel());
+                buffer.append(StreamUtility.enc(metadata.getLabel()));
                 buffer.append("\" TYPE=\"");
-                buffer.append(metadata.getType());
+                buffer.append(StreamUtility.enc(metadata.getType()));
                 buffer.append("\">");
                 
                 buffer.append("<METS:fptr FILEID=\"");
-                buffer.append(metadata.getID());
+                buffer.append(StreamUtility.enc(metadata.getID()));
                 buffer.append("\"/>");
                 
                 buffer.append("</METS:div>");

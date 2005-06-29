@@ -8,7 +8,7 @@ public abstract class Metadata implements Constants {
 
     private static long lastID = 0;
 
-    public static synchronized long getNextID() {
+    public static synchronized String getNextID() {
         long nextID = System.currentTimeMillis();
         while (nextID == lastID) {
             try { Thread.sleep(10); }
@@ -16,7 +16,7 @@ public abstract class Metadata implements Constants {
             nextID = System.currentTimeMillis();
         }
         lastID = nextID;
-        return lastID;
+        return "_" + Long.toString(lastID);
     }
     
     private String id;
@@ -26,7 +26,7 @@ public abstract class Metadata implements Constants {
     private String type = new String();
     
     public Metadata() {
-        id = Long.toString(getNextID());
+        id = getNextID();
     }
     
     public Metadata(Element xmlNode) {
@@ -35,7 +35,7 @@ public abstract class Metadata implements Constants {
         } else if (xmlNode.getNamespaceURI().equals(METS_NS) && xmlNode.getLocalName().equals("file")) {
             id = xmlNode.getAttribute("ID");
         } else {
-            id = Long.toString(getNextID());
+            id = getNextID();
         }
     }
     
