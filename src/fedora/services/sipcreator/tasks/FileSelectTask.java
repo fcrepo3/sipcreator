@@ -56,7 +56,7 @@ public class FileSelectTask extends JPanel {
     
     private UniversalAcceptor acceptor = new UniversalAcceptor();
     
-    private ChangeDirectoryAction changeDirectoryAction = new ChangeDirectoryAction();
+    private OpenFileAction openFileAction = new OpenFileAction();
     private EventHandler eventHandler = new EventHandler();
     
     //Data structures and UI components involved with the file browsing task
@@ -82,7 +82,7 @@ public class FileSelectTask extends JPanel {
         JPanel tempP1 = new JPanel(new BorderLayout());
         
         tempP1.add(fileSelectDirectoryLabel, BorderLayout.CENTER);
-        tempP1.add(new JButton(changeDirectoryAction), BorderLayout.EAST);
+        tempP1.add(new JButton(openFileAction), BorderLayout.EAST);
         
         setLayout(new BorderLayout(5, 5));
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -93,7 +93,11 @@ public class FileSelectTask extends JPanel {
     
     public void updateTree(String rootDirectoryName, SelectableEntry newRoot) {
         fileSelectDirectoryLabel.setText(rootDirectoryName);
-        fileSelectTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
+        if (newRoot == null) {
+            fileSelectTreeModel.setRoot(null);
+        } else {
+            fileSelectTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
+        }
     }
     
     public void refreshTree() {
@@ -103,6 +107,10 @@ public class FileSelectTask extends JPanel {
     public SelectableEntry getRootEntry() {
         SelectableEntryNode rootNode = (SelectableEntryNode)fileSelectTreeModel.getRoot();
         return (rootNode == null ? null : rootNode.getEntry());
+    }
+    
+    public OpenFileAction getOpenFileAction() {
+        return openFileAction;
     }
     
     
@@ -143,14 +151,15 @@ public class FileSelectTask extends JPanel {
         
     }
 
-    private class ChangeDirectoryAction extends AbstractAction {
+    public class OpenFileAction extends AbstractAction {
 
         private static final long serialVersionUID = 3763096349595678519L;
 
-        public ChangeDirectoryAction() {
-            putValue(Action.NAME, "Browse");
-            putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory");
+        public OpenFileAction() {
+            putValue(Action.NAME, "Open File");
+            putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory/zip file");
         }
+        
         
         public void actionPerformed(ActionEvent ae) {
             JFileChooser fileChooser = parent.getFileChooser();
@@ -160,6 +169,27 @@ public class FileSelectTask extends JPanel {
             if (choice != JFileChooser.APPROVE_OPTION) return;
             
             File file = fileChooser.getSelectedFile();
+            
+            if (fileSelectTreeModel.getRoot() != null) {
+                choice = JOptionPane.showConfirmDialog(parent,
+                        "This change will erase all metadata.  Continue?",
+                        "Warning", JOptionPane.YES_NO_OPTION);
+                if (choice != JOptionPane.YES_OPTION) return;
+            }
+            
+            try {
+                if (file.isDirectory()) {
+                    openDirectory(file);
+                } else {
+                    openZipFile(file);
+                }
+            } catch (Exception e) {
+                GUIUtility.showExceptionDialog(parent, e);
+                return;
+            }
+        }
+        
+        public void openDirectory(File file) throws IOException {
             SelectableEntry rootEntry;
             String rootDirectoryName;
             
@@ -170,26 +200,9 @@ public class FileSelectTask extends JPanel {
                 return;
             }
             
-            if (fileSelectTreeModel.getRoot() != null) {
-                choice = JOptionPane.showConfirmDialog(parent,
-                        "This change will erase all metadata.  Continue?",
-                        "Warning", JOptionPane.YES_NO_OPTION);
-                if (choice != JOptionPane.YES_OPTION) return;
-            }
-            
-            try {
-                rootDirectoryName = file.getCanonicalPath();
-                if (file.isDirectory()) {
-                    rootEntry = new FileSystemEntry(file, null, parent);
-                    rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
-                } else {
-                    rootEntry = handleZipFile(new ZipFile(file));
-                    rootEntry.setSelectionLevel(FileSystemEntry.FULLY_SELECTED, acceptor);
-                }
-            } catch (Exception e) {
-                GUIUtility.showExceptionDialog(parent, e);
-                return;
-            }
+            rootDirectoryName = file.getCanonicalPath();
+            rootEntry = new FileSystemEntry(file, null, parent);
+            rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
 
             JTabbedPane rightPanel = parent.getRightPanel();
             while (rightPanel.getTabCount() > 0) {
@@ -200,7 +213,26 @@ public class FileSelectTask extends JPanel {
             System.gc();
         }
         
+        public void openZipFile(File file) throws IOException, SAXException {
+            SelectableEntry rootEntry;
+            String rootDirectoryName;
+            
+            rootDirectoryName = file.getCanonicalPath();
+            rootEntry = handleZipFile(new ZipFile(file));
+            rootEntry.setSelectionLevel(FileSystemEntry.FULLY_SELECTED, acceptor);
+
+            JTabbedPane rightPanel = parent.getRightPanel();
+            while (rightPanel.getTabCount() > 0) {
+                rightPanel.remove(0);
+            }
+            parent.getMetadataEntryTask().updateTree(rootDirectoryName, rootEntry);
+            updateTree(rootDirectoryName, rootEntry);
+            System.gc();
+        }
+
+        
         private ZipFileEntry handleZipFile(ZipFile zipFile) throws IOException, SAXException {
+            System.out.println(zipFile.getName());
             Enumeration entryEnumeration = zipFile.entries();
             ZipEntry currentEntry;
             ZipFileEntry rootNode = null;

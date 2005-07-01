@@ -192,6 +192,7 @@ public class SIPCreator extends JApplet {
     }
     
     
+    
     private class CloseCurrentTabAction extends AbstractAction {
     	
 		private static final long serialVersionUID = -1317113261942287869L;
@@ -246,6 +247,18 @@ public class SIPCreator extends JApplet {
             }
             
             try {
+                boolean savingSameFile = false;
+                if (fileSelectTask.getRootEntry() instanceof ZipFileEntry && file.exists()) {
+                    String sourceName = ((ZipFileEntry)fileSelectTask.getRootEntry()).getSourceFile().getName();
+                    if (sourceName.equals(file.getAbsolutePath())) {
+                        savingSameFile = true;
+                    }                    
+                }
+                
+                if (savingSameFile) {
+                    file = File.createTempFile("zip", ".tmp");
+                }
+                
                 ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(file));
 
                 for (int ctr = 0; ctr < rightPanel.getTabCount(); ctr++) {
@@ -259,7 +272,6 @@ public class SIPCreator extends JApplet {
                 fileMapBuffer.append("</METS:fileGrp></METS:fileSec>");
                 
                 StringBuffer xmlBuffer = new StringBuffer(HEADER);
-                //xmlBuffer.append(getDMDSec(fileSelectTask.getRootEntry()));
                 xmlBuffer.append(fileMapBuffer);
                 xmlBuffer.append(structMapBuffer);
                 xmlBuffer.append(FOOTER);
@@ -275,6 +287,17 @@ public class SIPCreator extends JApplet {
                 zos.closeEntry();
                 
                 zos.close();
+                
+                if (savingSameFile) {
+                    ((ZipFileEntry)fileSelectTask.getRootEntry()).getSourceFile().close();
+                    try {
+                        fileChooser.getSelectedFile().delete();
+                        file.renameTo(fileChooser.getSelectedFile());
+                        fileSelectTask.getOpenFileAction().openZipFile(fileChooser.getSelectedFile());
+                    } catch (Exception e) {
+                        GUIUtility.showExceptionDialog(SIPCreator.this, e);
+                    }
+                }
                 
                 JOptionPane.showMessageDialog(SIPCreator.this, "ZIP File successfully written");
             } catch (IOException ioe) {
@@ -336,8 +359,6 @@ public class SIPCreator extends JApplet {
             buffer.append(StreamUtility.enc(entry.getLabel()));
             buffer.append("\" ID=\"");
             buffer.append(StreamUtility.enc(entry.getShortName()));
-            //buffer.append("\" CONTENTIDS=\"");
-            //buffer.append(StreamUtility.enc(entry.getID()));
             buffer.append("\" TYPE=\"file\">");
             
             buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
@@ -367,8 +388,6 @@ public class SIPCreator extends JApplet {
         }
         
         private void handleDirectoryData(StringBuffer buffer, SelectableEntry entry) {
-            //if (entry.getParent() == null) return;
-            
             Vector metadataList = entry.getMetadata();
             if (metadataList.size() == 0) return;
             
@@ -394,24 +413,6 @@ public class SIPCreator extends JApplet {
             buffer.append(StreamUtility.enc(entry.getShortName()));
             buffer.append("\" TYPE=\"");
             buffer.append("folder");
-            
-//            if (entry.getParent() == null) {
-//                Vector metadataList = entry.getMetadata();
-//                for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-//                    if (ctr == 0) {
-//                        buffer.append("\" DMDID=\"");
-//                    } else {
-//                        buffer.append(" ");
-//                    }
-//                    
-//                    buffer.append(((Metadata)metadataList.get(ctr)).getID());
-//                }
-//                
-//                buffer.append("\">");
-//                
-//                return;
-//            }
-            
             buffer.append("\">");
             
             Vector metadataList = entry.getMetadata();
@@ -514,107 +515,3 @@ public class SIPCreator extends JApplet {
     }
     
 }
-
-//private class ChangeUIAction extends AbstractAction {
-//
-//private static final long serialVersionUID = 6434604639170194137L;
-//
-//private String current = UIManager.getCrossPlatformLookAndFeelClassName();
-//
-//public ChangeUIAction() {
-//  putValue(Action.NAME, "Change UI");
-//  putValue(Action.SHORT_DESCRIPTION, "Toggles between Java and System look and feel");
-//}
-//
-//public void actionPerformed(ActionEvent ae) {
-//  if (current.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
-//      current = UIManager.getSystemLookAndFeelClassName();
-//  } else {
-//      current = UIManager.getCrossPlatformLookAndFeelClassName();
-//  }
-//  
-//  try {
-//      UIManager.setLookAndFeel(current);
-//      SwingUtilities.updateComponentTreeUI(SIPCreator.this);
-//        SwingUtilities.updateComponentTreeUI(fileChooser);
-//  } catch (Exception e) {
-//        GUIUtility.showExceptionDialog(SIPCreator.this, e);
-//  }
-//}
-//
-//}
-//
-//private class AddNewMetadataAction extends AbstractAction {
-//
-//    private static final long serialVersionUID = 3256728364034437681L;
-//
-//    private File lastDirectory = new File("."); 
-//    
-//    public AddNewMetadataAction() {
-//        putValue(Action.NAME, "Add New Metadata Format");
-//        putValue(Action.SHORT_DESCRIPTION, "Adds a new metadata format to the list");
-//    }
-//    
-//    public void actionPerformed(ActionEvent ae) {
-//        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//        fileChooser.setCurrentDirectory(lastDirectory);
-//        int choice = fileChooser.showOpenDialog(SIPCreator.this);
-//        lastDirectory = fileChooser.getCurrentDirectory();
-//        if (choice != JFileChooser.APPROVE_OPTION) return;
-//        
-//        try {
-//            File selectedFile = SIPCreator.this.fileChooser.getSelectedFile();
-//            
-//            URL url = new URL("file", "", selectedFile.getCanonicalPath() + "/");
-//            ClassLoader loader = new URLClassLoader(new URL[]{url}, ClassLoader.getSystemClassLoader());
-//            Vector addedClass = handleFile("", selectedFile, false, loader);
-//            JOptionPane.showMessageDialog(SIPCreator.this, "Added the following classes:\n" + addedClass);
-//        } catch (Exception e) {
-//            GUIUtility.showExceptionDialog(SIPCreator.this, e);
-//        }
-//    }
-//    
-//    private Vector handleFile(String packageName, File file, boolean addName, ClassLoader loader) {
-//        Vector result = new Vector();
-//        
-//        if (file.isDirectory()) {
-//            File[] fileList = file.listFiles();
-//            for (int ctr = 0; ctr < fileList.length; ctr++) {
-//                if (addName) {
-//                    String newPackageName = packageName + file.getName() + ".";
-//                    result.addAll(handleFile(newPackageName, fileList[ctr], true, loader));
-//                } else {
-//                    result.addAll(handleFile(packageName, fileList[ctr], true, loader));
-//                }
-//            }
-//            return result;
-//        }
-//        
-//        if (!file.getName().endsWith(".class")) return result;
-//        String className = packageName + file.getName().substring(0, file.getName().lastIndexOf('.'));
-//        Class loadedClass = null;
-//        try {
-//            loadedClass = loader.loadClass(className);
-//        } catch (ClassNotFoundException cnfe) {
-//            return result;
-//        }
-//        
-//        if (loadedClass.isInterface()) return result;
-//        if (!Metadata.class.isAssignableFrom(loadedClass)) return result;
-//        
-//        result.add(loadedClass);
-//        knownMetadataClasses.add(loadedClass);
-//        return result;
-//    }
-//    
-//}
-//
-//
-//public AddNewMetadataAction getAddNewMetadataAction() {
-//    return addNewMetadataAction;
-//}
-//
-//public ChangeUIAction getChangeUIAction() {
-//    return changeUIAction;
-//}
-//

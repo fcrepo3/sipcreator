@@ -11,7 +11,7 @@ import fedora.services.sipcreator.acceptor.SIPEntryAcceptor;
 
 public class ZipFileEntry extends SelectableEntry {
 
-    private ZipFile file;
+    private ZipFile zipFile;
     
     private ZipEntry entry;
     
@@ -26,7 +26,7 @@ public class ZipFileEntry extends SelectableEntry {
     private Hashtable childTable = new Hashtable();
     
     public ZipFileEntry(ZipFile newFile, ZipEntry newEntry, ZipFileEntry newParent) {
-        file = newFile;
+        zipFile = newFile;
         entry = newEntry;
         parent = newParent;
         name = entry.getName().replaceAll("\\\\", "/");
@@ -45,6 +45,10 @@ public class ZipFileEntry extends SelectableEntry {
     
     public ZipFileEntry getChild(String name) {
         return (ZipFileEntry)childTable.get(name);
+    }
+    
+    public ZipFile getSourceFile() {
+        return zipFile;
     }
     
     
@@ -68,7 +72,7 @@ public class ZipFileEntry extends SelectableEntry {
     }
 
     public InputStream getStream() throws IOException {
-        return file.getInputStream(entry);
+        return zipFile.getInputStream(entry);
     }
 
     
