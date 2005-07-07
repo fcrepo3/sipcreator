@@ -4,10 +4,6 @@ D! = Done, not sure if it should remain that way though
 D? = I think its done, but it might not be done right
 Dx = Undone
 
-Check to make sure ConversionRulesTask never actually *changes* its conversionRules object (why?)
-Warn if there is more than one DatastreamTemplate of any type per Entry
-Use special ObjectTemplate nodeTypes of "file", "folder", and "*".
-
    Documentation:
    * Javadoc all public methods
    * Javadoc all private/protected methods
@@ -23,7 +19,7 @@ Use special ObjectTemplate nodeTypes of "file", "folder", and "*".
 
    General System:
    * Embed CRules file into METS file
-   * BUG: saving over current .zip file causes JVM to crash
+D  * BUG: saving over current .zip file causes JVM to crash
    * Remove cruft libraries.  Log4j?
    * Saving of SIP file
 D    * How to get the "type" in the structMap section of the METS file
@@ -33,7 +29,9 @@ D    * How to get the "type" in the structMap section of the METS file
        component metadata id's?
 D    * Fix the header creation
 D    * How do we attach multiple metadata records to the root of the tree?
-D  * Loading of a SIP file
+   * Loading of a SIP file
+     * Fix MinimalMetadata writing out
+     * Fix METS validation
 D    * Read in individual SIP tree
 D    * Parse in METS file
 D      * Read in entry information
@@ -50,16 +48,13 @@ D      * Integrate
        * Edit Magic.xml
        * Evaluate usefulness
      * JAF from Sun
-       * Integrate
+D      * Integrate
        * Evaluate usefulness
      * Tool linked from Sandy
        * Integrate
        * Evaluate usefulnes
    * Integrate JHove
-   * Make sure that the different "task" views all update the same data, and
-     propagate the changes from the data to all of the non-current views
-D    * Between File System and Metadata tasks
-       * Do a more intelligent model update, than "structure changed" on root...
+   * Do a more intelligent model update, than "structure changed" on root...
 De * Save file's metadata beyond directory switching?
 D    * At least show a warning dialog when switching directories
 D  * Close all metadata tabs when switching
@@ -111,12 +106,17 @@ D  * Develop generic metadata API so that new formats can be "dropped in"
 
    CRules Task:
    * Allow for a way to check relationships of two nodes
-   * Allow for propogation of new rules back into XML file
-     * Based on Node name?
-     * Based on Node "type"?
    * Allow for a way to save new CRules.xml
+   * Check to make sure ConversionRulesTask never actually *changes* its conversionRules object (why?)
+   * Warn if there is more than one DatastreamTemplate of any type per Entry
+   * Use a map to go from nodeType to DTs, OTs, and Namespaces
    * Allow for visualization of graph
+D    * Allow for visualization of all relationships
      * Allow for relationship classes to be individually viewable
+D    * Use special ObjectTemplate nodeTypes of "file", "folder", and "*".
+     * Allow for propogation of new rules back into XML file
+       * Based on Node name?
+       * Based on Node "type"?
    * More complicated primitive relationships?
      * Chains of currently used relationships?
      * Subset of XPath?
