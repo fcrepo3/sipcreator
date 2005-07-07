@@ -15,14 +15,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import beowulf.gui.PopupListener;
 import fedora.services.sipcreator.FileSystemEntry;
+import fedora.services.sipcreator.MetadataView;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
 import fedora.services.sipcreator.SelectableEntryNode;
@@ -30,7 +31,6 @@ import fedora.services.sipcreator.SelectableEntryPanel;
 import fedora.services.sipcreator.acceptor.FilterAcceptor;
 import fedora.services.sipcreator.acceptor.IntersectionAcceptor;
 import fedora.services.sipcreator.acceptor.SelectionAcceptor;
-import fedora.services.sipcreator.utility.PopupListener;
 
 public class MetadataEntryTask extends JPanel {
 
@@ -100,6 +100,10 @@ public class MetadataEntryTask extends JPanel {
         metadataTreeModel.nodeStructureChanged((SelectableEntryNode)metadataTreeModel.getRoot());
     }
     
+    public FilterAction getFilterAction() {
+        return filterAction;
+    }
+    
     
     private class EventHandler extends MouseAdapter {
         
@@ -111,26 +115,21 @@ public class MetadataEntryTask extends JPanel {
             if (!(path.getLastPathComponent() instanceof SelectableEntryNode)) return;
             SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
             
-            int index;
-            JTabbedPane rightPanel = parent.getRightPanel();
-            for (index = 0; index < rightPanel.getTabCount(); index++) {
-                if (rightPanel.getToolTipTextAt(index).equals(node.getEntry().toString())) {
-                    break;
-                }
-            }
+            MetadataView metadataView = parent.getMetadataView();
+            int index = metadataView.getIndexByToolTip(node.getEntry().toString());
             
-            if (index == rightPanel.getTabCount()) {
+            if (index == -1) {
                 SelectableEntryPanel listPanel = new SelectableEntryPanel(node.getEntry(), parent);
-                rightPanel.addTab(node.toString(), null, listPanel, node.getEntry().toString());
-                rightPanel.setSelectedComponent(listPanel);
+                metadataView.addTab(node.toString(), null, listPanel, node.getEntry().toString());
+                metadataView.setSelectedComponent(listPanel);
             } else {
-                rightPanel.setSelectedIndex(index);
+                metadataView.setSelectedIndex(index);
             }
         }
         
     }
     
-    private class FilterAction extends AbstractAction {
+    public class FilterAction extends AbstractAction {
         
         private static final long serialVersionUID = 3256441395794162737L;
 

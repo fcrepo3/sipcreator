@@ -22,9 +22,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import beowulf.util.DOMUtility;
+import beowulf.util.StreamUtility;
 import fedora.services.sipcreator.Constants;
-import fedora.services.sipcreator.utility.DOMUtility;
-import fedora.services.sipcreator.utility.StreamUtility;
 import fedora.services.sipcreator.utility.TableSorter;
 
 /**

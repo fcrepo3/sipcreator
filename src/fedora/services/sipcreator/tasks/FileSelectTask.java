@@ -24,7 +24,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -36,6 +35,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import beowulf.gui.Utility;
+import beowulf.util.DOMUtility;
+import fedora.services.sipcreator.ExploreChildren;
 import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
@@ -45,8 +47,6 @@ import fedora.services.sipcreator.acceptor.UniversalAcceptor;
 import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.metadata.MinimalMetadata;
 import fedora.services.sipcreator.utility.CheckRenderer;
-import fedora.services.sipcreator.utility.DOMUtility;
-import fedora.services.sipcreator.utility.GUIUtility;
 
 public class FileSelectTask extends JPanel {
 
@@ -145,7 +145,7 @@ public class FileSelectTask extends JPanel {
                 fileSelectTreeModel.nodeChanged(node);
                 parent.getMetadataEntryTask().refreshTree();
             } catch (Exception e) {
-                GUIUtility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(parent, e);
             }
         }
         
@@ -180,11 +180,15 @@ public class FileSelectTask extends JPanel {
             try {
                 if (file.isDirectory()) {
                     openDirectory(file);
+                    ExploreChildren explorer = new ExploreChildren(getRootEntry());
+                    Thread t = new Thread(explorer, "FileSystemExplorer");
+                    t.setPriority(Thread.MIN_PRIORITY);
+                    t.start();
                 } else {
                     openZipFile(file);
                 }
             } catch (Exception e) {
-                GUIUtility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(parent, e);
                 return;
             }
         }
@@ -204,10 +208,7 @@ public class FileSelectTask extends JPanel {
             rootEntry = new FileSystemEntry(file, null, parent);
             rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
 
-            JTabbedPane rightPanel = parent.getRightPanel();
-            while (rightPanel.getTabCount() > 0) {
-                rightPanel.remove(0);
-            }
+            parent.getMetadataView().closeAllTabs();
             parent.getMetadataEntryTask().updateTree(rootDirectoryName, rootEntry);
             updateTree(rootDirectoryName, rootEntry);
             System.gc();
@@ -221,10 +222,7 @@ public class FileSelectTask extends JPanel {
             rootEntry = handleZipFile(new ZipFile(file));
             rootEntry.setSelectionLevel(FileSystemEntry.FULLY_SELECTED, acceptor);
 
-            JTabbedPane rightPanel = parent.getRightPanel();
-            while (rightPanel.getTabCount() > 0) {
-                rightPanel.remove(0);
-            }
+            parent.getMetadataView().closeAllTabs();
             parent.getMetadataEntryTask().updateTree(rootDirectoryName, rootEntry);
             updateTree(rootDirectoryName, rootEntry);
             System.gc();
@@ -285,7 +283,6 @@ public class FileSelectTask extends JPanel {
             Element fileSecNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "fileSec");
             
             Hashtable metadataTable = new Hashtable();
-            //addMetadataToTable(metadataTable, metsNode.getElementsByTagNameNS(METS_NS, "dmdSec"), "mdWrap", "MDTYPE");
             addMetadataToTable(metadataTable, fileSecNode.getElementsByTagNameNS(METS_NS, "file"));
             
             Element structMapNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "structMap");
@@ -294,27 +291,7 @@ public class FileSelectTask extends JPanel {
         }
         
         private void traverseStructMap(ZipFileEntry currentEntry, Element currentDiv, Hashtable mdTable) {
-//            if (currentEntry.getParent() == null) {
-//                String dmdidField = currentDiv.getAttribute("DMDID");
-//                StringTokenizer tokenizer = new StringTokenizer(dmdidField);
-//                
-//                while (tokenizer.hasMoreElements()) {
-//                    try {
-//                        String token = tokenizer.nextToken();
-//                        Object metadata = mdTable.get(token);
-//                        if (metadata == null) {
-//                            continue;
-//                        }
-//                        currentEntry.getMetadata().add(metadata);
-//                    } catch (Exception e) {}
-//                }
-//            }
-//            
             currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
-//            String id = currentDiv.getAttribute("CONTENTIDS");
-//            if (mdTable.get(id) != null) {
-//                currentEntry.setMimeType(mdTable.get(id).toString());
-//            }
             
             NodeList childList = currentDiv.getChildNodes();
             for (int ctr = 0; ctr < childList.getLength(); ctr++) {

@@ -26,7 +26,7 @@ public class FileSystemEntry extends SelectableEntry {
         
         file = newFile;
         try {
-            setMimeType(creator.getMimeTypeTool().getMagicMatch(file).getMimeType());
+            setMimeType(creator.getMimeTypeTool().getMimeType(file));
         } catch (Exception me) {
             setMimeType("");
         }

@@ -8,7 +8,8 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Vector;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -34,14 +35,14 @@ import javax.swing.event.ListSelectionListener;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import beowulf.gui.HideablePanel;
+import beowulf.gui.ScrollingPanel;
+import beowulf.gui.SemiEditableTableModel;
+import beowulf.gui.Utility;
 import fedora.services.sipcreator.ConversionRules;
 import fedora.services.sipcreator.SIPCreator;
-import fedora.services.sipcreator.utility.GUIUtility;
-import fedora.services.sipcreator.utility.HideablePanel;
-import fedora.services.sipcreator.utility.ScrollingPanel;
-import fedora.services.sipcreator.utility.SemiEditableTableModel;
 
-public class ConversionRulesTask extends JPanel implements ListSelectionListener {
+public class ConversionRulesTask extends JPanel implements ListSelectionListener, Observer {
 
     private static final long serialVersionUID = 3257853168707645496L;
     
@@ -223,7 +224,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         result2.setBorder(null);
         
         tempP = new JPanel(new BorderLayout());
-        tempP.add(GUIUtility.addLabelLeft("Template Type:  ", templateTypeLabel), BorderLayout.NORTH);
+        tempP.add(Utility.addLabelLeft("Template Type:  ", templateTypeLabel), BorderLayout.NORTH);
         tempP.add(result2, BorderLayout.CENTER);
         
         result1.setLeftComponent(topLeft);
@@ -240,42 +241,47 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     }
     
     
+    public void update(Observable o, Object arg) {
+        updateRules(crulesLabel.getText(), rules);
+    }
+    
     public void updateRules(String sourceName, ConversionRules newRules) {
+        if (rules != null) {
+            rules.deleteObserver(this);
+        }
         rules = newRules;
+        rules.addObserver(this);
         crulesLabel.setText(sourceName);
-        descriptionArea.setText(newRules.description);
+        descriptionArea.setText(newRules.getDescription());
         
         while (namespaceTableModel.getRowCount() > 0) namespaceTableModel.removeRow(0);
-        //datastreamListModel.clear();
         templateListModel.clear();
 
-        for (int ctr = 0; ctr < newRules.namespaceList.size(); ctr++) {
-            ConversionRules.Namespace namespace =
-                (ConversionRules.Namespace)newRules.namespaceList.get(ctr);
-            namespaceTableModel.addRow(new Object[]{namespace.alias, namespace.uri});
+        for (int ctr = 0; ctr < newRules.getNamespaceCount(); ctr++) {
+            ConversionRules.Namespace namespace = newRules.getNamespace(ctr);
+            namespaceTableModel.addRow(new Object[]{namespace.getAlias(), namespace.getURI()});
         }
         
-        for (int ctr = 0; ctr < newRules.datastreamTemplateList.size(); ctr++) {
-            //datastreamListModel.addElement(newRules.datastreamTemplateList.get(ctr));
-            templateListModel.addElement(newRules.datastreamTemplateList.get(ctr));
+        for (int ctr = 0; ctr < newRules.getDatastreamTemplateCount(); ctr++) {
+            templateListModel.addElement(newRules.getDatastreamTemplate(ctr));
         }
         
-        for (int ctr = 0; ctr < newRules.objectTemplateList.size(); ctr++) {
-            templateListModel.addElement(newRules.objectTemplateList.get(ctr));
+        for (int ctr = 0; ctr < newRules.getObjectTemplateCount(); ctr++) {
+            templateListModel.addElement(newRules.getObjectTemplate(ctr));
         }
     }
     
-    public void addDatastreamTemplate(ConversionRules.DatastreamTemplate newTemplate) {
-        templateListModel.addElement(newTemplate);
-        rules.datastreamTemplateList.add(newTemplate);
-    }
-    
-    public ConversionRules.DatastreamTemplate getDatastreamTemplate(String nodeType) {
-        return rules.getDatastreamTemplate(nodeType);
-    }
-    
-    public Vector getDatastreamTemplates() {
-        return rules.datastreamTemplateList;
+//    public void addDatastreamTemplate(ConversionRules.DatastreamTemplate newTemplate) {
+//        templateListModel.addElement(newTemplate);
+//        rules.addDatastreamTemplate(newTemplate);
+//    }
+//    
+//    public ConversionRules.DatastreamTemplate getDatastreamTemplate(String nodeType) {
+//        return rules.getDatastreamTemplate(nodeType);
+//    }
+//   
+    public ConversionRules getRules() {
+        return rules;
     }
     
     public void openURL(String value) throws SAXException, IOException {
@@ -304,19 +310,18 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
             if (!(selected instanceof ConversionRules.DatastreamTemplate)) return;
             ConversionRules.DatastreamTemplate casted = (ConversionRules.DatastreamTemplate)selected;
             
-            templateDescriptionArea.setText(casted.description);
-            for (int ctr = 0; ctr < casted.attributeNameList.size(); ctr++) {
+            templateDescriptionArea.setText(casted.getDescription());
+            for (int ctr = 0; ctr < casted.getAttributeCount(); ctr++) {
                 templateAttributeTableModel.addRow
-                (new Object[]{casted.attributeNameList.get(ctr),
-                              casted.attributeValueList.get(ctr)});
+                (new Object[]{casted.getAttributeName(ctr), casted.getAttributeValue(ctr)});
             }
             
             if (selected instanceof ConversionRules.ObjectTemplate) {
                 templateTypeLabel.setText("Object Template");
                 ConversionRules.ObjectTemplate casted2 = (ConversionRules.ObjectTemplate)selected;
                 
-                for (int ctr = 0; ctr < casted2.relationshipList.size(); ctr++) {
-                    relationshipListModel.addElement(casted2.relationshipList.get(ctr));
+                for (int ctr = 0; ctr < casted2.getRelationshipCount(); ctr++) {
+                    relationshipListModel.addElement(casted2.getRelationship(ctr));
                 }
             } else {
                 templateTypeLabel.setText("Datastream Template");
@@ -330,16 +335,15 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 relationshipTargetTableModel.removeRow(0);
             }
             
-            for (int ctr = 0; ctr < selected.targetNodeTypeList.size(); ctr++) {
+            for (int ctr = 0; ctr < selected.getTargetCount(); ctr++) {
                 relationshipTargetTableModel.addRow
-                (new Object[]{selected.targetNodeTypeList.get(ctr),
-                              selected.targetRelationshipList.get(ctr)});
+                (new Object[]{selected.getTargetNodeType(ctr), selected.getTargetRelationship(ctr)});
             }
         }
     }
     
     
-    private class LoadConversionRulesAction extends AbstractAction {
+    public class LoadConversionRulesAction extends AbstractAction {
         
         private static final long serialVersionUID = 3690752916960983351L;
 
@@ -358,7 +362,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
             
                 openFile(fileChooser.getSelectedFile());
             } catch (Exception e) {
-                GUIUtility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(parent, e);
             }
         }
 
@@ -370,7 +374,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         
     }
     
-    private class LoadConversionRulesWebAction extends AbstractAction {
+    public class LoadConversionRulesWebAction extends AbstractAction {
         
         private static final long serialVersionUID = -332126288068464408L;
 
@@ -387,7 +391,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
                 openURL(urlString);
             } catch (Exception e) {
-                GUIUtility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(parent, e);
             }
         }
         
@@ -397,5 +401,5 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         }
         
     }
-    
+
 }

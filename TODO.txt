@@ -4,6 +4,10 @@ D! = Done, not sure if it should remain that way though
 D? = I think its done, but it might not be done right
 Dx = Undone
 
+Check to make sure ConversionRulesTask never actually *changes* its conversionRules object (why?)
+Warn if there is more than one DatastreamTemplate of any type per Entry
+Use special ObjectTemplate nodeTypes of "file", "folder", and "*".
+
    Documentation:
    * Javadoc all public methods
    * Javadoc all private/protected methods
