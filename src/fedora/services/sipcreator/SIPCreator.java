@@ -22,7 +22,10 @@ import javax.swing.Action;
 import javax.swing.JApplet;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
@@ -50,6 +53,9 @@ public class SIPCreator extends JApplet {
     //These are event handling classes.
     private SaveSIPAction saveSIPAction = new SaveSIPAction();
     private GenerateGraphAction generateGraphAction = new GenerateGraphAction();
+    
+    private JLabel currentFileLabel = new JLabel();
+    private JProgressBar progressBar = new JProgressBar();
     
     //Tool for parsing XML documents
     private DocumentBuilder documentBuilder;
@@ -109,10 +115,20 @@ public class SIPCreator extends JApplet {
         cp.setLayout(new BorderLayout(5, 5));
         cp.add(topPane, BorderLayout.CENTER);
         cp.add(createToolBar(), BorderLayout.NORTH);
+        cp.add(createStatusBar(), BorderLayout.SOUTH);
         //Perform default loading activities
         loadDefaults();
     }
 
+    private JComponent createStatusBar() {
+        JPanel result = new JPanel(new BorderLayout());
+        
+        result.add(currentFileLabel, BorderLayout.CENTER);
+        result.add(Utility.addLabelLeft("Loading Status: ", progressBar), BorderLayout.EAST);
+        
+        return result;
+    }
+    
     private JComponent createRightPanel() {
         JTabbedPane result = new JTabbedPane();
         
@@ -218,7 +234,6 @@ public class SIPCreator extends JApplet {
     }
     
     
-    
     public class SaveSIPAction extends AbstractAction {
     	
 		private static final long serialVersionUID = 7374330582160746169L;
@@ -296,6 +311,15 @@ public class SIPCreator extends JApplet {
             }
             zos.closeEntry();
             
+            entry = new ZipEntry("crules.xml");
+            entry.setTime(System.currentTimeMillis());
+            zos.putNextEntry(entry);
+            xmlReader = new StringReader(conversionRulesTask.getRules().toXML());
+            while ((byteRead = xmlReader.read()) != -1) {
+                zos.write(byteRead);
+            }
+            zos.closeEntry();
+            
             zos.close();
             
             if (savingSameFile) {
@@ -363,8 +387,6 @@ public class SIPCreator extends JApplet {
         
         private void handleFileStructure(StringBuffer buffer, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
-            buffer.append(StreamUtility.enc(entry.getLabel()));
-            buffer.append("\" ID=\"");
             buffer.append(StreamUtility.enc(entry.getShortName()));
             buffer.append("\" TYPE=\"file\">");
             
@@ -415,8 +437,6 @@ public class SIPCreator extends JApplet {
         
         private void startDirectoryStructure(StringBuffer buffer, SelectableEntry entry) {
             buffer.append("<METS:div LABEL=\"");
-            buffer.append(StreamUtility.enc(entry.getLabel()));
-            buffer.append("\" ID=\"");
             buffer.append(StreamUtility.enc(entry.getShortName()));
             buffer.append("\" TYPE=\"");
             buffer.append("folder");
@@ -513,6 +533,14 @@ public class SIPCreator extends JApplet {
         return conversionRulesTask;
     }
     
+    public JLabel getCurrentFileLabel() {
+        return currentFileLabel;
+    }
+    
+    public JProgressBar getProgressBar() {
+        return progressBar;
+    }
+    
     public FileSelectTask getFileSelectTask() {
         return fileSelectTask;
     }
@@ -532,6 +560,7 @@ public class SIPCreator extends JApplet {
     public JFileChooser getFileChooser() {
         return fileChooser;
     }
+    
     
     public SaveSIPAction getSaveSIPAction() {
         return saveSIPAction;

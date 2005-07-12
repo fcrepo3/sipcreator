@@ -2,7 +2,7 @@ package fedora.services.sipcreator.acceptor;
 
 import fedora.services.sipcreator.SelectableEntry;
 
-public class SelectionAcceptor implements SIPEntryAcceptor {
+public class SelectionAcceptor extends SIPEntryAcceptor {
 
     private int allowableSelectionStates;
     

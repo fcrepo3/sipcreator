@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 import fedora.services.sipcreator.SelectableEntry;
 
-public class FilterAcceptor implements SIPEntryAcceptor {
+public class FilterAcceptor extends SIPEntryAcceptor {
 
     private String filter;
     

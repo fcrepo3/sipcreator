@@ -72,11 +72,11 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     private JTable relationshipTargetTableDisplay;
     private SemiEditableTableModel relationshipTargetTableModel;
     
-    private SIPCreator parent;
+    private SIPCreator creator;
     
     
-    public ConversionRulesTask(SIPCreator newParent) {
-        parent = newParent;
+    public ConversionRulesTask(SIPCreator newCreator) {
+        creator = newCreator;
         rules = new ConversionRules();
         
         //Minimum sizes are explicitly set so that labels with long text entries
@@ -271,15 +271,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         }
     }
     
-//    public void addDatastreamTemplate(ConversionRules.DatastreamTemplate newTemplate) {
-//        templateListModel.addElement(newTemplate);
-//        rules.addDatastreamTemplate(newTemplate);
-//    }
-//    
-//    public ConversionRules.DatastreamTemplate getDatastreamTemplate(String nodeType) {
-//        return rules.getDatastreamTemplate(nodeType);
-//    }
-//   
     public ConversionRules getRules() {
         return rules;
     }
@@ -357,18 +348,18 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         public void actionPerformed(ActionEvent ae) {
             try {
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                int choice = fileChooser.showOpenDialog(parent);
+                int choice = fileChooser.showOpenDialog(creator);
                 if (choice != JFileChooser.APPROVE_OPTION) return;
             
                 openFile(fileChooser.getSelectedFile());
             } catch (Exception e) {
-                Utility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(creator, e);
             }
         }
 
         public void openFile(File file) throws IOException, SAXException {
             InputSource is = new InputSource(new FileInputStream(file));
-            ConversionRules crules = new ConversionRules(parent.getXMLParser().parse(is));
+            ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(is));
             updateRules(file.getCanonicalPath(), crules);
         }
         
@@ -386,17 +377,17 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         public void actionPerformed(ActionEvent ae) {
             try {
                 String message = "What is the URL of the conversion rules file?";
-                String urlString = JOptionPane.showInputDialog(parent, message);
+                String urlString = JOptionPane.showInputDialog(creator, message);
                 if (urlString == null || urlString.length() == 0) return;
 
                 openURL(urlString);
             } catch (Exception e) {
-                Utility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(creator, e);
             }
         }
         
         public void openURL(String url) throws IOException, SAXException {
-            ConversionRules crules = new ConversionRules(parent.getXMLParser().parse(url));
+            ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(url));
             updateRules(url, crules);
         }
         

@@ -18,20 +18,18 @@ Dx = Undone
    * Integrate Log4j
 
    General System:
-   * Embed CRules file into METS file
+D  * Embed CRules file into Zip file
 D  * BUG: saving over current .zip file causes JVM to crash
    * Remove cruft libraries.  Log4j?
    * Saving of SIP file
 D    * How to get the "type" in the structMap section of the METS file
        - Type field explicity part of Metadata class now
      * What to do about unknown mime types?
-     * Should there be a human readable relationship between file id's and their
-       component metadata id's?
 D    * Fix the header creation
 D    * How do we attach multiple metadata records to the root of the tree?
-   * Loading of a SIP file
-     * Fix MinimalMetadata writing out
-     * Fix METS validation
+D  * Loading of a SIP file
+D    * Fix MinimalMetadata writing out
+D    * Fix METS validation
 D    * Read in individual SIP tree
 D    * Parse in METS file
 D      * Read in entry information
@@ -40,19 +38,18 @@ D      * Associate each entry with its metadata
          - Had to use extra unused fields in METS
 D      * Read in MIMETYPEs
 D      * set Metadata ID counter
-   * MIME Type detection
-     * Use all 3?  Give the user the power to switch?
-     * jMimeMagic
+D  * MIME Type detection
+D    * Give the user the power to switch
+D    * Create wrapper interface
+D    * jMimeMagic
 D      * Integrate
-       * Replace oro with java regexs
-       * Edit Magic.xml
-       * Evaluate usefulness
-     * JAF from Sun
+De     * Replace oro with java regexs
+De     * Edit Magic.xml
+D      * Evaluate usefulness
+D    * JAF from Sun
 D      * Integrate
-       * Evaluate usefulness
-     * Tool linked from Sandy
-       * Integrate
-       * Evaluate usefulnes
+D      * Evaluate usefulness
+De   * Tool linked from Sandy
    * Integrate JHove
    * Do a more intelligent model update, than "structure changed" on root...
 De * Save file's metadata beyond directory switching?

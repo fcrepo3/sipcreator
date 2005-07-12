@@ -5,13 +5,15 @@ import java.awt.BorderLayout;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.apache.axis.encoding.Base64;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import fedora.services.sipcreator.Constants;
 
 public class MinimalMetadata extends Metadata implements Constants {
 
-    private String xmlString = new String();
+    private String string = new String();
     
     public MinimalMetadata() {
     }
@@ -19,9 +21,11 @@ public class MinimalMetadata extends Metadata implements Constants {
     public MinimalMetadata(Element xmlNode) {
         super(xmlNode);
 
-        Element xmlDataNode = (Element)xmlNode.getElementsByTagNameNS(METS_NS, "xmlData").item(0);
+        Node xmlDataNode = xmlNode.getElementsByTagNameNS(METS_NS, "xmlData").item(0);
+        //Element xmlDataNode = DOMUtility.firstElementNamed(xmlNode, METS_NS, "xmlData");
         if (xmlDataNode.getFirstChild() != null) {
-            setXMLString(xmlDataNode.getFirstChild().toString());
+            Node plainTextNode = xmlDataNode.getFirstChild().getFirstChild();
+            setString(new String(Base64.decode(plainTextNode.getNodeValue())));
         }
     }
     
@@ -30,19 +34,19 @@ public class MinimalMetadata extends Metadata implements Constants {
     }
 
     public String getHint() {
-        return "XML: " + getLabel();
+        return "Plain: " + getLabel();
     }
     
-    public void setXMLString(String newXMLString) {
-        xmlString = newXMLString;
+    public void setString(String newString) {
+        string = newString;
     }
     
-    public String getXMLString() {
-        return xmlString;
+    public String getString() {
+        return string;
     }
     
     public String getAsXML() {
-        return xmlString;
+        return "<plainText>" + Base64.encode(string.getBytes()) + "</plainText>";
     }
 
     private static class MinimalMetadataPanel extends MetadataPanel {
@@ -71,11 +75,11 @@ public class MinimalMetadata extends Metadata implements Constants {
         }
 
         public void updateFromMetadata() {
-            textArea.setText(metadata.getAsXML());
+            textArea.setText(metadata.getString());
         }
 
         public void updateMetadata() {
-            metadata.setXMLString(textArea.getText());
+            metadata.setString(textArea.getText());
         }
         
     }

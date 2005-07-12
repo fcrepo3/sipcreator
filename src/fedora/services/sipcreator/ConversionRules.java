@@ -13,6 +13,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import beowulf.util.DOMUtility;
+import beowulf.util.StreamUtility;
 
 public class ConversionRules extends Observable implements Observer { 
     
@@ -405,8 +406,6 @@ public class ConversionRules extends Observable implements Observer {
         return toReturn;
     }
 
-    
-    
     private String datastreamToString(DatastreamTemplate datastream) {
         String toReturn = "\tDatastreamTemplate [nodeType=" + datastream.getNodeType();
         toReturn += ",description=" + description + "]";
@@ -441,6 +440,97 @@ public class ConversionRules extends Observable implements Observer {
         return toReturn;
     }
     
+    
+    
+    public String toXML() {
+        StringBuffer result = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        result.append("<conversionRules>");
+        
+        result.append("<description>");
+        result.append(StreamUtility.enc(description));
+        result.append("</description>");
+        
+        for (int ctr = 0; ctr < namespaceList.size(); ctr++) {
+            Namespace ns = (Namespace)namespaceList.get(ctr);
+            result.append("<namespace alias=\"");
+            result.append(StreamUtility.enc(ns.getAlias()));
+            result.append("\" uri=\"");
+            result.append(StreamUtility.enc(ns.getURI()));
+            result.append("\"/>");
+        }
+        
+        for (int ctr = 0; ctr < datastreamTemplateList.size(); ctr++) {
+            appendDatastream(result, (DatastreamTemplate)datastreamTemplateList.get(ctr));
+        }
+        
+        for (int ctr = 0; ctr < objectTemplateList.size(); ctr++) {
+            appendObject(result, (ObjectTemplate)objectTemplateList.get(ctr));
+        }
+        
+        result.append("</conversionRules>");
+        return result.toString();
+    }
+    
+    private void appendDatastream(StringBuffer result, DatastreamTemplate dt) {
+        result.append("<datastreamTemplate nodeType=\"");
+        result.append(StreamUtility.enc(dt.getNodeType()));
+        result.append("\">");
+        
+        if (dt.getDescription() != null) {
+            result.append("<description>");
+            result.append(StreamUtility.enc(dt.getDescription()));
+            result.append("</description>");
+        }
+        
+        for (int ctr = 0; ctr < dt.getAttributeCount(); ctr++) {
+            result.append("<attribute name=\"");
+            result.append(StreamUtility.enc(dt.getAttributeName(ctr)));
+            result.append("\" value=\"");
+            result.append(StreamUtility.enc(dt.getAttributeValue(ctr)));
+            result.append("\"/>");
+        }
+        
+        result.append("</datastreamTemplate>");
+    }
+    
+    private void appendObject(StringBuffer result, ObjectTemplate ot) {
+        result.append("<objectTemplate nodeType=\"");
+        result.append(StreamUtility.enc(ot.getNodeType()));
+        result.append("\">");
+        
+        if (ot.getDescription() != null) {
+            result.append("<description>");
+            result.append(StreamUtility.enc(ot.getDescription()));
+            result.append("</description>");
+        }
+        
+        for (int ctr = 0; ctr < ot.getAttributeCount(); ctr++) {
+            result.append("<attribute name=\"");
+            result.append(StreamUtility.enc(ot.getAttributeName(ctr)));
+            result.append("\" value=\"");
+            result.append(StreamUtility.enc(ot.getAttributeValue(ctr)));
+            result.append("\"/>");
+        }
+        
+        for (int ctr1 = 0; ctr1 < ot.getRelationshipCount(); ctr1++) {
+            Relationship rel = ot.getRelationship(ctr1);
+            result.append("<relationship name=\"");
+            result.append(StreamUtility.enc(rel.getName()));
+            result.append("\">");
+            
+            for (int ctr2 = 0; ctr2 < rel.getTargetCount(); ctr2++) {
+                result.append("<target primitiveRel=\"");
+                result.append(StreamUtility.enc(rel.getTargetRelationship(ctr2)));
+                result.append("\" nodeType=\"");
+                result.append(StreamUtility.enc(rel.getTargetRelationship(ctr2)));
+                result.append("\"/>");
+            }
+            
+            result.append("</relationship>");
+        }
+        
+        result.append("</objectTemplate>");
+    }
     
     
     public ConversionRules() {

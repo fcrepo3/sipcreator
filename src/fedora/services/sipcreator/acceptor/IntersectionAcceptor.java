@@ -4,7 +4,7 @@ import java.util.Vector;
 
 import fedora.services.sipcreator.SelectableEntry;
 
-public class IntersectionAcceptor implements SIPEntryAcceptor {
+public class IntersectionAcceptor extends SIPEntryAcceptor {
 
     private Vector acceptorList = new Vector();
     

@@ -10,13 +10,18 @@ public class ExploreChildren implements Runnable {
     
     private SelectableEntry root;
     
-    public ExploreChildren(SelectableEntry newRoot) {
+    private SIPCreator creator;
+    
+    public ExploreChildren(SelectableEntry newRoot, SIPCreator newCreator) {
         root = newRoot;
+        creator = newCreator;
     }
     
     public void run() {
         Vector queue = new Vector();
         queue.add(root);
+        
+        creator.getProgressBar().setIndeterminate(true);
         
         while (queue.size() > 0) {
             SelectableEntry entry = (SelectableEntry)queue.remove(0);
@@ -25,9 +30,13 @@ public class ExploreChildren implements Runnable {
                 queue.add(entry.getChildAt(ctr, acceptor));
                 Thread.yield();
             }
+            
+            creator.getProgressBar().setValue(1);
         }
         
-        System.out.println("Finished");
+        creator.getProgressBar().setIndeterminate(false);
+        creator.getProgressBar().setMaximum(1);
+        creator.getProgressBar().setMinimum(0);
     }
     
 }

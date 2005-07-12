@@ -1,7 +1,6 @@
 package fedora.services.sipcreator.tasks;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -20,7 +19,6 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -37,6 +35,7 @@ import org.xml.sax.SAXException;
 
 import beowulf.gui.Utility;
 import beowulf.util.DOMUtility;
+import fedora.services.sipcreator.ConversionRules;
 import fedora.services.sipcreator.ExploreChildren;
 import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.SIPCreator;
@@ -60,28 +59,20 @@ public class FileSelectTask extends JPanel {
     private EventHandler eventHandler = new EventHandler();
     
     //Data structures and UI components involved with the file browsing task
-    private JLabel fileSelectDirectoryLabel = new JLabel();
     private CheckRenderer fileSelectTreeRenderer = new CheckRenderer();
     private DefaultTreeModel fileSelectTreeModel = new DefaultTreeModel(null);
     private JTree fileSelectTreeDisplay = new JTree(fileSelectTreeModel);
     
-    private SIPCreator parent;
+    private SIPCreator creator;
     
-    public FileSelectTask(SIPCreator newParent) {
-        parent = newParent;
+    public FileSelectTask(SIPCreator newCreator) {
+        creator = newCreator;
         
         fileSelectTreeDisplay.setCellRenderer(fileSelectTreeRenderer);
         fileSelectTreeDisplay.addMouseListener(eventHandler);
         fileSelectTreeDisplay.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         
-        //Minimum sizes are explicitly set so that labels with long text entries
-        //will not keep the containing JSplitPane from resizing down past the point
-        //at which all the text on the label is visible
-        fileSelectDirectoryLabel.setMinimumSize(new Dimension(1, 1));
-
         JPanel tempP1 = new JPanel(new BorderLayout());
-        
-        tempP1.add(fileSelectDirectoryLabel, BorderLayout.CENTER);
         tempP1.add(new JButton(openFileAction), BorderLayout.EAST);
         
         setLayout(new BorderLayout(5, 5));
@@ -91,8 +82,7 @@ public class FileSelectTask extends JPanel {
     }
 
     
-    public void updateTree(String rootDirectoryName, SelectableEntry newRoot) {
-        fileSelectDirectoryLabel.setText(rootDirectoryName);
+    public void updateTree(SelectableEntry newRoot) {
         if (newRoot == null) {
             fileSelectTreeModel.setRoot(null);
         } else {
@@ -143,9 +133,9 @@ public class FileSelectTask extends JPanel {
                 }
                 
                 fileSelectTreeModel.nodeChanged(node);
-                parent.getMetadataEntryTask().refreshTree();
+                creator.getMetadataEntryTask().refreshTree();
             } catch (Exception e) {
-                Utility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(creator, e);
             }
         }
         
@@ -162,16 +152,16 @@ public class FileSelectTask extends JPanel {
         
         
         public void actionPerformed(ActionEvent ae) {
-            JFileChooser fileChooser = parent.getFileChooser();
+            JFileChooser fileChooser = creator.getFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 
-            int choice = fileChooser.showOpenDialog(parent);
+            int choice = fileChooser.showOpenDialog(creator);
             if (choice != JFileChooser.APPROVE_OPTION) return;
             
             File file = fileChooser.getSelectedFile();
             
             if (fileSelectTreeModel.getRoot() != null) {
-                choice = JOptionPane.showConfirmDialog(parent,
+                choice = JOptionPane.showConfirmDialog(creator,
                         "This change will erase all metadata.  Continue?",
                         "Warning", JOptionPane.YES_NO_OPTION);
                 if (choice != JOptionPane.YES_OPTION) return;
@@ -180,57 +170,54 @@ public class FileSelectTask extends JPanel {
             try {
                 if (file.isDirectory()) {
                     openDirectory(file);
-                    ExploreChildren explorer = new ExploreChildren(getRootEntry());
+                    ExploreChildren explorer = new ExploreChildren(getRootEntry(), creator);
                     Thread t = new Thread(explorer, "FileSystemExplorer");
                     t.setPriority(Thread.MIN_PRIORITY);
                     t.start();
                 } else {
                     openZipFile(file);
                 }
+                
+                creator.getCurrentFileLabel().setText(file.getCanonicalPath());
             } catch (Exception e) {
-                Utility.showExceptionDialog(parent, e);
+                Utility.showExceptionDialog(creator, e);
                 return;
             }
         }
         
-        public void openDirectory(File file) throws IOException {
+        public void openDirectory(File file) {
             SelectableEntry rootEntry;
-            String rootDirectoryName;
             
             if (file.getName().equalsIgnoreCase("METS.xml")) {
-                JOptionPane.showMessageDialog(parent,
+                JOptionPane.showMessageDialog(creator,
                         "The root directory cannot use METS.xml as a name, " +
                         "that name is reserved for the descriptive metadata file.");
                 return;
             }
             
-            rootDirectoryName = file.getCanonicalPath();
-            rootEntry = new FileSystemEntry(file, null, parent);
+            rootEntry = new FileSystemEntry(file, null, creator);
             rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
 
-            parent.getMetadataView().closeAllTabs();
-            parent.getMetadataEntryTask().updateTree(rootDirectoryName, rootEntry);
-            updateTree(rootDirectoryName, rootEntry);
+            creator.getMetadataView().closeAllTabs();
+            creator.getMetadataEntryTask().updateTree(rootEntry);
+            updateTree(rootEntry);
             System.gc();
         }
         
         public void openZipFile(File file) throws IOException, SAXException {
             SelectableEntry rootEntry;
-            String rootDirectoryName;
             
-            rootDirectoryName = file.getCanonicalPath();
             rootEntry = handleZipFile(new ZipFile(file));
             rootEntry.setSelectionLevel(FileSystemEntry.FULLY_SELECTED, acceptor);
 
-            parent.getMetadataView().closeAllTabs();
-            parent.getMetadataEntryTask().updateTree(rootDirectoryName, rootEntry);
-            updateTree(rootDirectoryName, rootEntry);
+            creator.getMetadataView().closeAllTabs();
+            creator.getMetadataEntryTask().updateTree(rootEntry);
+            updateTree(rootEntry);
             System.gc();
         }
 
         
         private ZipFileEntry handleZipFile(ZipFile zipFile) throws IOException, SAXException {
-            System.out.println(zipFile.getName());
             Enumeration entryEnumeration = zipFile.entries();
             ZipEntry currentEntry;
             ZipFileEntry rootNode = null;
@@ -243,7 +230,7 @@ public class FileSelectTask extends JPanel {
                 StringTokenizer tokenizer = new StringTokenizer(name, "/");
 
                 //If the entry is the METS.xml file, handle that separately
-                if (name.equalsIgnoreCase("METS.xml")) {
+                if (name.equals("METS.xml") || name.equals("crules.xml")) {
                     continue;
                 }
                 
@@ -272,12 +259,21 @@ public class FileSelectTask extends JPanel {
             
             handleMETS(zipFile, rootNode);
             
+            handleCRules(zipFile);
+            
             return rootNode;
         }
 
+        private void handleCRules(ZipFile zipFile) throws IOException, SAXException {
+            ZipEntry crulesEntry = zipFile.getEntry("crules.xml");
+            Document crulesDocument = creator.getXMLParser().parse(zipFile.getInputStream(crulesEntry));
+            
+            creator.getConversionRulesTask().updateRules("crules.xml", new ConversionRules(crulesDocument));
+        }
+        
         private void handleMETS(ZipFile zipFile, ZipFileEntry rootNode) throws IOException, SAXException {
             ZipEntry metsEntry = zipFile.getEntry("METS.xml");
-            Document metsDocument = parent.getXMLParser().parse(zipFile.getInputStream(metsEntry));
+            Document metsDocument = creator.getXMLParser().parse(zipFile.getInputStream(metsEntry));
             
             Element metsNode = metsDocument.getDocumentElement();
             Element fileSecNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "fileSec");
@@ -314,7 +310,7 @@ public class FileSelectTask extends JPanel {
                         currentEntry.getMetadata().add(metadata);
                         currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
                     } else {
-                        String name = currentNode.getAttribute("ID");
+                        String name = currentNode.getAttribute("LABEL");
                         traverseStructMap(currentEntry.getChild(name), currentNode, mdTable);
                     }
                 } catch (Exception e) {}

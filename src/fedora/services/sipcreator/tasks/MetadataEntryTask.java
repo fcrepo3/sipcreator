@@ -1,8 +1,6 @@
 package fedora.services.sipcreator.tasks;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -11,7 +9,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -43,17 +40,16 @@ public class MetadataEntryTask extends JPanel {
     private IntersectionAcceptor acceptor = new IntersectionAcceptor(); 
     
     //Data structures and UI components involved with the metadata entry task
-    private JLabel metadataDirectoryLabel = new JLabel();
     private DefaultTreeModel metadataTreeModel = new DefaultTreeModel(null);
     private JTree metadataTreeDisplay = new JTree(metadataTreeModel);
 
     private JCheckBox filterEnabledBox = new JCheckBox(filterAction);
     private JTextField filterField = new JTextField();
     
-    private SIPCreator parent;
+    private SIPCreator creator;
     
-    public MetadataEntryTask(SIPCreator newParent) {
-        parent = newParent;
+    public MetadataEntryTask(SIPCreator newCreator) {
+        creator = newCreator;
         
         acceptor.getAcceptorList().add(filterAcceptor);
         acceptor.getAcceptorList().add(new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED));
@@ -64,18 +60,9 @@ public class MetadataEntryTask extends JPanel {
         
         filterField.addActionListener(filterAction);
         
-        //Minimum sizes are explicitly set so that labels with long text entries
-        //will not keep the containing JSplitPane from resizing down past the point
-        //at which all the text on the label is visible
-        metadataDirectoryLabel.setMinimumSize(new Dimension(1, 1));
-        
-        JPanel tempP1 = new JPanel(new GridLayout(2, 1, 5, 5));
-        tempP1.add(metadataDirectoryLabel);
-        
-        JPanel tempP2 = new JPanel(new BorderLayout());
-        tempP2.add(filterEnabledBox, BorderLayout.EAST);
-        tempP2.add(filterField, BorderLayout.CENTER);
-        tempP1.add(tempP2);
+        JPanel tempP1 = new JPanel(new BorderLayout());
+        tempP1.add(filterEnabledBox, BorderLayout.EAST);
+        tempP1.add(filterField, BorderLayout.CENTER);
         
         setLayout(new BorderLayout(5, 5));
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -90,9 +77,7 @@ public class MetadataEntryTask extends JPanel {
     }
     
     
-    public void updateTree(String rootDirectoryName, SelectableEntry newRoot) {
-        metadataDirectoryLabel.setText(rootDirectoryName);
-        metadataDirectoryLabel.setToolTipText(rootDirectoryName);
+    public void updateTree(SelectableEntry newRoot) {
         metadataTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
     }
     
@@ -115,11 +100,11 @@ public class MetadataEntryTask extends JPanel {
             if (!(path.getLastPathComponent() instanceof SelectableEntryNode)) return;
             SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
             
-            MetadataView metadataView = parent.getMetadataView();
+            MetadataView metadataView = creator.getMetadataView();
             int index = metadataView.getIndexByToolTip(node.getEntry().toString());
             
             if (index == -1) {
-                SelectableEntryPanel listPanel = new SelectableEntryPanel(node.getEntry(), parent);
+                SelectableEntryPanel listPanel = new SelectableEntryPanel(node.getEntry(), creator);
                 metadataView.addTab(node.toString(), null, listPanel, node.getEntry().toString());
                 metadataView.setSelectedComponent(listPanel);
             } else {
