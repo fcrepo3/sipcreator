@@ -1,5 +1,6 @@
 package fedora.services.sipcreator;
 
+import java.util.Hashtable;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Vector;
@@ -19,10 +20,25 @@ public class ConversionRules extends Observable implements Observer {
     
     public static class Namespace extends Observable {
         
-        private String alias;
+        private String alias = new String();
         
-        private String uri;
+        private String uri = new String();
        
+        
+        public Namespace() {
+        }
+        
+        public Namespace(Namespace copy) {
+            set(copy);
+        }
+        
+        
+        public void set(Namespace copy) {
+            if (copy == this) return;
+            alias = copy.getAlias();
+            uri = copy.getURI();
+        }
+        
         
         public String getAlias() {
             return alias;
@@ -54,13 +70,33 @@ public class ConversionRules extends Observable implements Observer {
     
     public static class DatastreamTemplate extends Observable {
         
-        private String description;
+        private String description = new String();
         
-        private String nodeType;
+        private String nodeType = new String();
         
         private final Vector attributeNameList = new Vector();
         
         private final Vector attributeValueList = new Vector();
+
+        private final Hashtable attributeMap = new Hashtable();
+        
+        
+        public DatastreamTemplate() {
+        }
+        
+        public DatastreamTemplate(DatastreamTemplate copy) {
+            set(copy);
+        }
+        
+        
+        public void set(DatastreamTemplate copy) {
+            if (copy == this) return;
+            setDescription(copy.getDescription());
+            setNodeType(copy.getNodeType());
+            for (int ctr = 0; ctr < copy.getAttributeCount(); ctr++) {
+                addAttribute(copy.getAttributeName(ctr), copy.getAttributeValue(ctr));
+            }
+        }
         
         
         public String getDescription() {
@@ -87,6 +123,10 @@ public class ConversionRules extends Observable implements Observer {
             return (String)attributeValueList.get(index);
         }
         
+        public String getAttribute(String name) {
+            return (String)attributeMap.get(name);
+        }
+        
         
         public void setDescription(String newDescription) {
             description = newDescription;
@@ -100,26 +140,34 @@ public class ConversionRules extends Observable implements Observer {
             notifyObservers();
         }
         
-        public void addAttribute(String newName, String newValue) {
-            insertAttribute(newName, newValue, getAttributeCount());
-        }
-        
-        public void insertAttribute(String newName, String newValue, int index) {
-            attributeNameList.insertElementAt(newName, index);
-            attributeValueList.insertElementAt(newValue, index);
+        public String addAttribute(String newName, String newValue) {
+            String oldValue = (String)attributeMap.put(newName, newValue);
+            if (oldValue != null) {
+                attributeValueList.setElementAt(newValue, indexOfAttribute(newName));
+            } else {
+                attributeNameList.add(newName);
+                attributeValueList.add(newValue);
+            }
+            
             setChanged();
             notifyObservers();
+            
+            return oldValue;
         }
         
-        public void removeAttribute(int index) {
-            attributeNameList.remove(index);
-            attributeValueList.remove(index);
+        public String removeAttribute(String name) {
+            String oldValue = (String)attributeMap.remove(name);
+            attributeNameList.remove(name);
+            attributeValueList.remove(oldValue);
+            
             setChanged();
             notifyObservers();
+            
+            return oldValue;
         }
         
-        public void removeAttribute(String name) {
-            removeAttribute(attributeNameList.indexOf(name));
+        public String removeAttribute(int index) {
+            return removeAttribute(getAttributeName(index));
         }
         
         
@@ -132,6 +180,25 @@ public class ConversionRules extends Observable implements Observer {
     public static class ObjectTemplate extends DatastreamTemplate implements Observer {
         
         private final Vector relationshipList = new Vector();
+        
+        private final Hashtable relationshipMap = new Hashtable();
+        
+        
+        public ObjectTemplate() {
+        }
+        
+        public ObjectTemplate(ObjectTemplate copy) {
+            set(copy);
+        }
+        
+        
+        public void set(ObjectTemplate copy) {
+            if (copy == this) return;
+            super.set(copy);
+            for (int ctr = 0; ctr < copy.getRelationshipCount(); ctr++) {
+                addRelationship(new Relationship(copy.getRelationship(ctr)));
+            }
+        }
         
         
         public int getRelationshipCount() {
@@ -146,27 +213,43 @@ public class ConversionRules extends Observable implements Observer {
             return (Relationship)relationshipList.get(index);
         }
         
-        
-        public void addRelationship(Relationship newRelationship) {
-            insertRelationship(newRelationship, relationshipList.size());
+        public Relationship getRelationship(String name) {
+            return (Relationship)relationshipMap.get(name);
         }
         
-        public void insertRelationship(Relationship newRelationship, int index) {
-            relationshipList.insertElementAt(newRelationship, index);
+        
+        public Relationship addRelationship(Relationship newRelationship) {
+            Relationship oldRelationship = (Relationship)relationshipMap.put(newRelationship.getName(), newRelationship);
+            if (oldRelationship == null) {
+                relationshipList.add(newRelationship);
+            } else {
+                oldRelationship.deleteObserver(this);
+            }
             newRelationship.addObserver(this);
+            
             setChanged();
             notifyObservers();
+            
+            return oldRelationship;
         }
         
-        public void removeRelationship(int index) {
-            Relationship relationship = (Relationship)relationshipList.remove(index);
+        public Relationship removeRelationship(Relationship relationship) {
+            relationshipList.remove(relationship);
+            relationshipMap.remove(relationship.getName());
             relationship.deleteObserver(this);
+            
             setChanged();
             notifyObservers();
+            
+            return relationship;
         }
         
-        public void removeRelationship(Relationship relationship) {
-            removeRelationship(relationshipList.indexOf(relationship));
+        public Relationship removeRelationship(int index) {
+            return removeRelationship(getRelationship(index));
+        }
+        
+        public Relationship removeRelationship(String name) {
+            return removeRelationship(getRelationship(name));
         }
         
         
@@ -179,12 +262,29 @@ public class ConversionRules extends Observable implements Observer {
     
     public static class Relationship extends Observable {
         
-        private String name;
+        private String name = new String();
         
         private final Vector targetRelationshipList = new Vector();
         
         private final Vector targetNodeTypeList = new Vector();
-     
+
+        
+        public Relationship() {
+        }
+        
+        public Relationship(Relationship copy) {
+            set(copy);
+        }
+        
+        
+        public void set(Relationship copy) {
+            if (copy == this) return;
+            setName(copy.getName());
+            for (int ctr = 0; ctr < copy.getTargetCount(); ctr++) {
+                addTarget(copy.getTargetRelationship(ctr), copy.getTargetNodeType(ctr));
+            }
+        }
+        
         
         public String getName() {
             return name;
@@ -210,12 +310,8 @@ public class ConversionRules extends Observable implements Observer {
         }
         
         public void addTarget(String newTargetRelationship, String newTargetNodeType) {
-            insertTarget(newTargetRelationship, newTargetNodeType, getTargetCount());
-        }
-        
-        public void insertTarget(String newTargetRelationship, String newTargetNodeType, int index) {
-            targetRelationshipList.insertElementAt(newTargetRelationship, index);
-            targetNodeTypeList.insertElementAt(newTargetNodeType, index);
+            targetRelationshipList.add(newTargetRelationship);
+            targetNodeTypeList.add(newTargetNodeType);
             setChanged();
             notifyObservers();
         }
@@ -238,10 +334,13 @@ public class ConversionRules extends Observable implements Observer {
     private String description = new String();
     
     private final Vector namespaceList = new Vector();
+    private final Hashtable namespaceMap = new Hashtable();
     
-    private final Vector datastreamTemplateList = new Vector();
+    private final Vector datastreamList = new Vector();
+    private final Hashtable datastreamMap = new Hashtable();
     
-    private final Vector objectTemplateList = new Vector(); 
+    private final Vector objectList = new Vector();
+    private final Hashtable objectMap = new Hashtable();
     
     
     public String getDescription() {
@@ -260,50 +359,44 @@ public class ConversionRules extends Observable implements Observer {
         return (Namespace)namespaceList.get(index);
     }
     
+    public Namespace getNamespace(String alias) {
+        return (Namespace)namespaceMap.get(alias);
+    }
+    
     public int getDatastreamTemplateCount() {
-        return datastreamTemplateList.size();
+        return datastreamList.size();
     }
     
     public int indexOfDatastreamTemplate(DatastreamTemplate template) {
-        return datastreamTemplateList.indexOf(template);
+        return datastreamList.indexOf(template);
     }
     
     public DatastreamTemplate getDatastreamTemplate(int index) {
-        return (DatastreamTemplate)datastreamTemplateList.get(index);
+        return (DatastreamTemplate)datastreamList.get(index);
     }
     
     public DatastreamTemplate getDatastreamTemplate(String nodeType) {
-        for (int ctr = 0; ctr < getDatastreamTemplateCount(); ctr++) {
-            if (getDatastreamTemplate(ctr).getNodeType().equals(nodeType)) {
-                return getDatastreamTemplate(ctr);
-            }
-        }
-        return null;
+        return (DatastreamTemplate)datastreamMap.get(nodeType);
     }
     
     public int getObjectTemplateCount() {
-        return objectTemplateList.size();
+        return objectList.size();
     }
     
     public int indexOfObjectTemplate(ObjectTemplate template) {
-        return objectTemplateList.indexOf(template);
+        return objectList.indexOf(template);
     }
     
     public ObjectTemplate getObjectTemplate(int index) {
-        return (ObjectTemplate)objectTemplateList.get(index);
+        return (ObjectTemplate)objectList.get(index);
     }
     
     public ObjectTemplate getObjectTemplate(String nodeType) {
-        for (int ctr = 0; ctr < getObjectTemplateCount(); ctr++) {
-            if (getObjectTemplate(ctr).getNodeType().equals(nodeType)) {
-                return getObjectTemplate(ctr);
-            }
-        }
-        return null;
+        return (ObjectTemplate)objectMap.get(nodeType);
     }
     
     public MutableComboBoxModel getDatastreamComboBoxModel() {
-        return new DefaultComboBoxModel(datastreamTemplateList);
+        return new DefaultComboBoxModel(datastreamList);
     }
     
     
@@ -315,72 +408,108 @@ public class ConversionRules extends Observable implements Observer {
     }
     
     
-    public void addNamespace(Namespace newNamespace) {
-        insertNamespace(newNamespace, namespaceList.size());
-    }
-    
-    public void insertNamespace(Namespace newNamespace, int index) {
-        namespaceList.insertElementAt(newNamespace, index);
+    public Namespace addNamespace(Namespace newNamespace) {
+        Namespace oldNamespace = (Namespace)namespaceMap.put(newNamespace.getAlias(), newNamespace);
+        if (oldNamespace == null) {
+            namespaceList.add(newNamespace);
+        } else {
+            oldNamespace.deleteObserver(this);
+        }
         newNamespace.addObserver(this);
+        
         setChanged();
         notifyObservers();
+        
+        return oldNamespace;
     }
     
-    public void removeNamespace(int index) {
-        Namespace namespace = (Namespace)namespaceList.remove(index);
+    public Namespace removeNamespace(Namespace namespace) {
+        namespaceList.remove(namespace);
+        namespaceMap.remove(namespace.getAlias());
         namespace.deleteObserver(this);
+        
         setChanged();
         notifyObservers();
+        
+        return namespace;
     }
     
-    public void removeNamespace(Namespace namespace) {
-        removeNamespace(namespaceList.indexOf(namespace));
+    public Namespace removeNamespace(int index) {
+        return removeNamespace(getNamespace(index));
+    }
+    
+    public Namespace removeNamespace(String nodeType) {
+        return removeNamespace(getNamespace(nodeType));
     }
     
     
-    public void addDatastreamTemplate(DatastreamTemplate newTemplate) {
-        insertDatastreamTemplate(newTemplate, datastreamTemplateList.size());
+    public DatastreamTemplate addDatastreamTemplate(DatastreamTemplate newDT) {
+        DatastreamTemplate oldDT = (DatastreamTemplate)datastreamMap.put(newDT.getNodeType(), newDT);
+        if (oldDT == null) {
+            datastreamList.add(newDT);
+        } else {
+            oldDT.deleteObserver(this);
+        }
+        newDT.addObserver(this);
+        
+        setChanged();
+        notifyObservers();
+        
+        return oldDT;
+    }
+    
+    public DatastreamTemplate removeDatastreamTemplate(DatastreamTemplate template) {
+        datastreamMap.remove(template.getNodeType());
+        datastreamList.remove(template);
+        template.deleteObserver(this);
+        
+        setChanged();
+        notifyObservers();
+        
+        return template;
     }
 
-    public void insertDatastreamTemplate(DatastreamTemplate newTemplate, int index) {
-        datastreamTemplateList.insertElementAt(newTemplate, index);
-        newTemplate.addObserver(this);
-        setChanged();
-        notifyObservers();
+    public DatastreamTemplate removeDatastreamTemplate(String nodeType) {
+        return removeDatastreamTemplate(getDatastreamTemplate(nodeType));
     }
     
-    public void removeDatastreamTemplate(int index) {
-        DatastreamTemplate template = (DatastreamTemplate)datastreamTemplateList.get(index);
+    public DatastreamTemplate removeDatastreamTemplate(int index) {
+        return removeDatastreamTemplate(getDatastreamTemplate(index));
+    }    
+    
+    
+    public ObjectTemplate addObjectTemplate(ObjectTemplate newOT) {
+        ObjectTemplate oldOT = (ObjectTemplate)objectMap.put(newOT.getNodeType(), newOT);
+        if (oldOT == null) {
+            objectList.add(newOT);
+        } else {
+            oldOT.deleteObserver(this);
+        }
+        newOT.addObserver(this);
+        
+        setChanged();
+        notifyObservers();
+        
+        return oldOT;
+    }
+    
+    public ObjectTemplate removeObjectTemplate(ObjectTemplate template) {
+        objectList.remove(template);
+        objectMap.remove(template.getNodeType());
         template.deleteObserver(this);
+        
         setChanged();
         notifyObservers();
+        
+        return template;
     }
     
-    public void removeDatastreamTemplate(DatastreamTemplate template) {
-        removeDatastreamTemplate(datastreamTemplateList.indexOf(template));
-    }
-    
-    
-    public void addObjectTemplate(ObjectTemplate newTemplate) {
-        insertObjectTemplate(newTemplate, objectTemplateList.size());
+    public ObjectTemplate removeObjectTemplate(int index) {
+        return removeObjectTemplate(getObjectTemplate(index));
     }
 
-    public void insertObjectTemplate(ObjectTemplate newTemplate, int index) {
-        objectTemplateList.insertElementAt(newTemplate, index);
-        newTemplate.addObserver(this);
-        setChanged();
-        notifyObservers();
-    }
-    
-    public void removeObjectTemplate(int index) {
-        ObjectTemplate template = (ObjectTemplate)objectTemplateList.get(index);
-        template.deleteObserver(this);
-        setChanged();
-        notifyObservers();
-    }
-    
-    public void removeObjectTemplate(ObjectTemplate template) {
-        removeObjectTemplate(objectTemplateList.indexOf(template));
+    public ObjectTemplate removeObjectTemplate(String nodeType) {
+        return removeObjectTemplate(getObjectTemplate(nodeType));
     }
     
     
@@ -459,12 +588,12 @@ public class ConversionRules extends Observable implements Observer {
             result.append("\"/>");
         }
         
-        for (int ctr = 0; ctr < datastreamTemplateList.size(); ctr++) {
-            appendDatastream(result, (DatastreamTemplate)datastreamTemplateList.get(ctr));
+        for (int ctr = 0; ctr < datastreamList.size(); ctr++) {
+            appendDatastream(result, (DatastreamTemplate)datastreamList.get(ctr));
         }
         
-        for (int ctr = 0; ctr < objectTemplateList.size(); ctr++) {
-            appendObject(result, (ObjectTemplate)objectTemplateList.get(ctr));
+        for (int ctr = 0; ctr < objectList.size(); ctr++) {
+            appendObject(result, (ObjectTemplate)objectList.get(ctr));
         }
         
         result.append("</conversionRules>");
@@ -548,13 +677,47 @@ public class ConversionRules extends Observable implements Observer {
             if (name.equals("namespace")) {
                 namespaceList.add(handleNamespace(child, new Namespace()));
             } else if (name.equals("datastreamTemplate")) {
-                datastreamTemplateList.add(handleDatastream(child, new DatastreamTemplate()));
+                datastreamList.add(handleDatastream(child, new DatastreamTemplate()));
             } else if (name.equals("objectTemplate")) {
-                objectTemplateList.add(handleObject(child, new ObjectTemplate()));
+                objectList.add(handleObject(child, new ObjectTemplate()));
             }
         }
     }
 
+    
+    public void clear() {
+        setDescription(new String());
+        while (getNamespaceCount() > 0) {
+            removeNamespace(0);
+        }
+        while (getDatastreamTemplateCount() > 0) {
+            removeDatastreamTemplate(0);
+        }
+        while (getObjectTemplateCount() > 0) {
+            removeObjectTemplate(0);
+        }
+        System.gc();
+    }
+
+    public void set(ConversionRules copy) {
+        if (copy == this) return;
+        clear();
+        
+        setDescription(copy.getDescription());
+        
+        for (int ctr = 0; ctr < copy.getNamespaceCount(); ctr++) {
+            addNamespace(new Namespace(copy.getNamespace(ctr)));
+        }
+        
+        for (int ctr = 0; ctr < copy.getDatastreamTemplateCount(); ctr++) {
+            addDatastreamTemplate(new DatastreamTemplate(copy.getDatastreamTemplate(ctr)));
+        }
+        
+        for (int ctr = 0; ctr < copy.getObjectTemplateCount(); ctr++) {
+            addObjectTemplate(new ObjectTemplate(copy.getObjectTemplate(ctr)));
+        }
+    }
+    
     
     
     private Namespace handleNamespace(Element node, Namespace namespace) {

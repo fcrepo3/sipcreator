@@ -2,58 +2,39 @@ package fedora.services.sipcreator;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
-import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 import java.util.Vector;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JApplet;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JToolBar;
+import javax.swing.filechooser.FileFilter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import beowulf.gui.JGraph;
 import beowulf.gui.Utility;
 import beowulf.util.ExtensionFileFilter;
-import beowulf.util.StreamUtility;
-import fedora.services.sipcreator.acceptor.SelectionAcceptor;
 import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.mimetype.MimetypeDetector;
 import fedora.services.sipcreator.tasks.ConversionRulesTask;
 import fedora.services.sipcreator.tasks.FileSelectTask;
 import fedora.services.sipcreator.tasks.MetadataEntryTask;
 
-public class SIPCreator extends JApplet {
+public class SIPCreator extends JApplet implements Constants {
 
     private static final long serialVersionUID = 3690478008922224183L;
 
-    private static final String CONFIG_FILE_NAME = "config" + File.separator + "sipcreator.properties";
-    
-    //These are event handling classes.
-    private SaveSIPAction saveSIPAction = new SaveSIPAction();
-    private GenerateGraphAction generateGraphAction = new GenerateGraphAction();
-    
     private JLabel currentFileLabel = new JLabel();
     private JProgressBar progressBar = new JProgressBar();
     
@@ -62,13 +43,15 @@ public class SIPCreator extends JApplet {
 
     //Tool for file selection
     private JFileChooser fileChooser = new JFileChooser(".");
+    private FileFilter xmlFilter = new ExtensionFileFilter("xml");
+    private FileFilter zipFilter = new ExtensionFileFilter("zip");
     
     //Global data structure for storing system wide properties
     private Properties sipCreatorProperties = new Properties();
     
     //UI component for displaying/editing file metadata
-    private JGraph graphView = new JGraph(); 
-    private MetadataView metadataView = new MetadataView();
+    //private JGraph graphView = new JGraph(); 
+    //private MetadataView metadataView = new MetadataView();
     
     //Tool for determining MIME type
     private MimetypeDetector mimetypeDetector;
@@ -102,20 +85,15 @@ public class SIPCreator extends JApplet {
             Utility.showExceptionDialog(this, pce, "XML Parser failed initialization");
         }
         
-        fileChooser.addChoosableFileFilter(new ExtensionFileFilter("zip"));
+        fileChooser.addChoosableFileFilter(zipFilter);
+        fileChooser.addChoosableFileFilter(xmlFilter);
         
-        //Create the central JSplitPane
-        JSplitPane topPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        topPane.setLeftComponent(createLeftPanel());
-        topPane.setRightComponent(createRightPanel());
-        topPane.setOneTouchExpandable(true);
-
         //Add the JSplitPane
         Container cp = getContentPane();
         cp.setLayout(new BorderLayout(5, 5));
-        cp.add(topPane, BorderLayout.CENTER);
-        cp.add(createToolBar(), BorderLayout.NORTH);
+        cp.add(createCenterPanel(), BorderLayout.CENTER);
         cp.add(createStatusBar(), BorderLayout.SOUTH);
+        
         //Perform default loading activities
         loadDefaults();
     }
@@ -129,29 +107,10 @@ public class SIPCreator extends JApplet {
         return result;
     }
     
-    private JComponent createRightPanel() {
-        JTabbedPane result = new JTabbedPane();
-        
-        result.addTab("Metadata View", null, metadataView, "Shows the active metadata");
-        result.addTab("Graph View", null, graphView, "Shows the relationship graph");
-        
-        return result;
-    }
-    
-    private JToolBar createToolBar() {
-    	JToolBar result = new JToolBar();
-    	
-    	result.add(saveSIPAction);
-    	result.add(metadataView.getCloseCurrentTabAction());
-    	result.add(generateGraphAction);
-        
-    	return result;
-    }
-    
-    private JComponent createLeftPanel() {
+    private JComponent createCenterPanel() {
         JTabbedPane leftPanel = new JTabbedPane();
         
-        leftPanel.addTab("File Selection", null, fileSelectTask, "blarg");
+        leftPanel.addTab("File Selection", fileSelectTask);
         leftPanel.addTab("Metadata Entry", metadataEntryTask);
         leftPanel.addTab("Conversion Rules", conversionRulesTask);
         
@@ -195,9 +154,9 @@ public class SIPCreator extends JApplet {
     
     private void loadDefaultConversionRules(String value) throws Exception {
         try {
-            conversionRulesTask.openURL(value);
+            conversionRulesTask.getLoadConversionRulesWebAction().openURL(value);
         } catch (Exception mue) {
-            conversionRulesTask.openFile(new File(value));
+            conversionRulesTask.getLoadConversionRulesAction().openFile(new File(value));
         }
     }
     
@@ -234,295 +193,12 @@ public class SIPCreator extends JApplet {
     }
     
     
-    public class SaveSIPAction extends AbstractAction {
-    	
-		private static final long serialVersionUID = 7374330582160746169L;
-
-        private static final int BUFFER_SIZE = 4096;
-        
-        private static final String HEADER = 
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
-            "<METS:mets xmlns:METS=\"http://www.loc.gov/METS/\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-        
-        private static final String FOOTER = "</METS:mets>";
-        
-        private SelectionAcceptor acceptor = new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED);
-        
-		private SaveSIPAction() {
-    		putValue(Action.NAME, "Save SIP");
-    		putValue(Action.SHORT_DESCRIPTION, "Save the current files and metadata as a SIP file");
-    	}
-    	
-    	public void actionPerformed(ActionEvent ae) {
-            fileChooser.setFileFilter(null);
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-            
-            int choice = fileChooser.showSaveDialog(SIPCreator.this);
-            if (choice != JFileChooser.APPROVE_OPTION) return;
-            
-            File file = fileChooser.getSelectedFile();
-            if (file.exists()) {
-                choice = JOptionPane.showConfirmDialog(SIPCreator.this, "Overwrite existing file?");
-                if (choice != JOptionPane.YES_OPTION) return;
-            }
-            
-            try {
-                saveFile(file);
-            } catch (IOException ioe) {
-                Utility.showExceptionDialog(SIPCreator.this, ioe, "Error saving zip file");
-            }
-    	}
-        
-        public void saveFile(File file) throws IOException {
-            boolean savingSameFile = false;
-            if (fileSelectTask.getRootEntry() instanceof ZipFileEntry && file.exists()) {
-                String sourceName = ((ZipFileEntry)fileSelectTask.getRootEntry()).getSourceFile().getName();
-                if (sourceName.equals(file.getAbsolutePath())) {
-                    savingSameFile = true;
-                }                    
-            }
-            
-            if (savingSameFile) {
-                file = File.createTempFile("zip", ".tmp");
-            }
-            
-            ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(file));
-
-            metadataView.updateMetadata();
-            
-            StringBuffer fileMapBuffer = new StringBuffer("<METS:fileSec><METS:fileGrp>");
-            StringBuffer structMapBuffer = new StringBuffer("<METS:structMap>");
-            walkTree(zos, fileMapBuffer, structMapBuffer, "", fileSelectTask.getRootEntry());
-            structMapBuffer.append("</METS:structMap>");
-            fileMapBuffer.append("</METS:fileGrp></METS:fileSec>");
-            
-            StringBuffer xmlBuffer = new StringBuffer(HEADER);
-            xmlBuffer.append(fileMapBuffer);
-            xmlBuffer.append(structMapBuffer);
-            xmlBuffer.append(FOOTER);
-            
-            ZipEntry entry = new ZipEntry("METS.xml");
-            entry.setTime(System.currentTimeMillis());
-            zos.putNextEntry(entry);
-            StringReader xmlReader = new StringReader(xmlBuffer.toString());
-            int byteRead;
-            while ((byteRead = xmlReader.read()) != -1) {
-                zos.write(byteRead);
-            }
-            zos.closeEntry();
-            
-            entry = new ZipEntry("crules.xml");
-            entry.setTime(System.currentTimeMillis());
-            zos.putNextEntry(entry);
-            xmlReader = new StringReader(conversionRulesTask.getRules().toXML());
-            while ((byteRead = xmlReader.read()) != -1) {
-                zos.write(byteRead);
-            }
-            zos.closeEntry();
-            
-            zos.close();
-            
-            if (savingSameFile) {
-                ((ZipFileEntry)fileSelectTask.getRootEntry()).getSourceFile().close();
-                try {
-                    fileChooser.getSelectedFile().delete();
-                    file.renameTo(fileChooser.getSelectedFile());
-                    fileSelectTask.getOpenFileAction().openZipFile(fileChooser.getSelectedFile());
-                } catch (Exception e) {
-                    Utility.showExceptionDialog(SIPCreator.this, e);
-                }
-            }
-            
-            JOptionPane.showMessageDialog(SIPCreator.this, "ZIP File successfully written");
-        }
-        
-        private void walkTree(ZipOutputStream zos, StringBuffer fileMap, StringBuffer structMap, String name, SelectableEntry entry) throws IOException {
-            name += entry.getShortName();
-            
-            handleFile(zos, name, entry.isDirectory() ? null : entry.getStream());
-            if (!entry.isDirectory()) {
-                handleFileData(fileMap, name, entry);
-                handleFileStructure(structMap, entry);
-                return;
-            }
-            
-            handleDirectoryData(fileMap, entry);
-            startDirectoryStructure(structMap, entry);
-            
-            name += File.separator;
-            int childCount = entry.getChildCount(acceptor);
-            for (int ctr = 0; ctr < childCount; ctr++) {
-                walkTree(zos, fileMap, structMap, name, entry.getChildAt(ctr, acceptor));
-            }
-            
-            endDirectoryStructure(structMap);
-        }
-        
-        private void handleFileData(StringBuffer buffer, String name, SelectableEntry entry) {
-            buffer.append("<METS:file ID=\"");
-            buffer.append(StreamUtility.enc(entry.getID()));
-            buffer.append("\" MIMETYPE=\"");
-            buffer.append(StreamUtility.enc(entry.getMimeType()));
-            buffer.append("\">");
-            buffer.append("<METS:FLocat LOCTYPE=\"URL\" xlink:href=\"file:///");
-            buffer.append(StreamUtility.enc(name.replaceAll("\\\\", "/")));
-            buffer.append("\"/>");
-            buffer.append("</METS:file>");
-            
-            Vector metadataList = entry.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
-                
-                buffer.append("<METS:file ID=\"");
-                buffer.append(StreamUtility.enc(metadata.getID()));
-                buffer.append("\" MIMETYPE=\"text/xml\">");
-                buffer.append("<METS:FContent USE=\"");
-                buffer.append(StreamUtility.enc(metadata.getClass().getName()));
-                buffer.append("\"><METS:xmlData>");
-                buffer.append(metadata.getAsXML());
-                buffer.append("</METS:xmlData></METS:FContent>");
-                buffer.append("</METS:file>");
-            }
-        }
-        
-        private void handleFileStructure(StringBuffer buffer, SelectableEntry entry) {
-            buffer.append("<METS:div LABEL=\"");
-            buffer.append(StreamUtility.enc(entry.getShortName()));
-            buffer.append("\" TYPE=\"file\">");
-            
-            buffer.append("<METS:div LABEL=\"Content\" TYPE=\"content\">");
-            buffer.append("<METS:fptr FILEID=\"");
-            buffer.append(StreamUtility.enc(entry.getID()));
-            buffer.append("\"/>");
-            buffer.append("</METS:div>");
-            
-            Vector metadataList = entry.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
-                
-                buffer.append("<METS:div LABEL=\"");
-                buffer.append(StreamUtility.enc(metadata.getLabel()));
-                buffer.append("\" TYPE=\"");
-                buffer.append(StreamUtility.enc(metadata.getType()));
-                buffer.append("\">");
-                
-                buffer.append("<METS:fptr FILEID=\"");
-                buffer.append(StreamUtility.enc(metadata.getID()));
-                buffer.append("\"/>");
-                
-                buffer.append("</METS:div>");
-            }
-
-            buffer.append("</METS:div>");
-        }
-        
-        private void handleDirectoryData(StringBuffer buffer, SelectableEntry entry) {
-            Vector metadataList = entry.getMetadata();
-            if (metadataList.size() == 0) return;
-            
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
-                
-                buffer.append("<METS:file ID=\"");
-                buffer.append(StreamUtility.enc(metadata.getID()));
-                buffer.append("\" MIMETYPE=\"text/xml\">");
-                buffer.append("<METS:FContent USE=\"");
-                buffer.append(StreamUtility.enc(metadata.getClass().getName()));
-                buffer.append("\"><METS:xmlData>");
-                buffer.append(metadata.getAsXML());
-                buffer.append("</METS:xmlData></METS:FContent>");
-                buffer.append("</METS:file>");
-            }
-        }
-        
-        private void startDirectoryStructure(StringBuffer buffer, SelectableEntry entry) {
-            buffer.append("<METS:div LABEL=\"");
-            buffer.append(StreamUtility.enc(entry.getShortName()));
-            buffer.append("\" TYPE=\"");
-            buffer.append("folder");
-            buffer.append("\">");
-            
-            Vector metadataList = entry.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
-                
-                buffer.append("<METS:div LABEL=\"");
-                buffer.append(StreamUtility.enc(metadata.getLabel()));
-                buffer.append("\" TYPE=\"");
-                buffer.append(StreamUtility.enc(metadata.getType()));
-                buffer.append("\">");
-                
-                buffer.append("<METS:fptr FILEID=\"");
-                buffer.append(StreamUtility.enc(metadata.getID()));
-                buffer.append("\"/>");
-                
-                buffer.append("</METS:div>");
-            }
-        }
-        
-        private void endDirectoryStructure(StringBuffer buffer) {
-            buffer.append("</METS:div>");
-        } 
-        
-        private void handleFile(ZipOutputStream zos, String name, InputStream stream) throws IOException {
-            if (stream == null) {
-                ZipEntry entry = new ZipEntry(name + "/");
-                //entry.setTime(file.lastModified());
-                //no need to setCRC, or setSize as they are computed automatically.
-                
-                zos.putNextEntry(entry);
-                zos.closeEntry();
-                return;
-            }
-            
-            ZipEntry entry = new ZipEntry(name);
-            //entry.setTime(file.lastModified());
-            //no need to setCRC, or setSize as they are computed automatically.
-            
-            zos.putNextEntry(entry);
-            //FileInputStream fis = new FileInputStream(file);
-            byte[] buffer = new byte[BUFFER_SIZE];
-            while (stream.available() > 0) {
-                int bytesRead = stream.read(buffer, 0, BUFFER_SIZE);
-                if (bytesRead == -1) {
-                    break;
-                }
-                zos.write(buffer, 0, bytesRead);
-            }
-            
-            stream.close();
-            zos.closeEntry();
-        }
-    	
-    }
-    
-    public class GenerateGraphAction extends AbstractAction {
-        
-        private static final long serialVersionUID = 5055044742911980919L;
-
-        private GenerateGraphAction() {
-            putValue(Action.NAME, "Generate Graph");
-            putValue(Action.SHORT_DESCRIPTION, "Generate a graph based on the current rules and tree");
-        }
-        
-        public void actionPerformed(ActionEvent ae) {
-            ConversionRulesGraph crg = new ConversionRulesGraph(conversionRulesTask.getRules(), fileSelectTask.getRootEntry());
-            graphView.setModel(crg);
-        }
-        
-    }
-    
-    
     public Properties getProperties() {
         return sipCreatorProperties;
     }
     
     public MimetypeDetector getMimeTypeTool() {
         return mimetypeDetector;
-    }
-    
-    public MetadataView getMetadataView() {
-        return metadataView;
     }
     
     public MetadataEntryTask getMetadataEntryTask() {
@@ -561,9 +237,12 @@ public class SIPCreator extends JApplet {
         return fileChooser;
     }
     
+    public FileFilter getXMLFilter() {
+        return xmlFilter;
+    }
     
-    public SaveSIPAction getSaveSIPAction() {
-        return saveSIPAction;
+    public FileFilter getZIPFilter() {
+        return zipFilter;
     }
     
 }

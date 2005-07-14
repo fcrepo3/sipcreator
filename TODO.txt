@@ -77,7 +77,7 @@ D  * Using a real regex language
 D  * Escape . to mean \. and * to mean .*
 
    Metadata Entry Task:
-   * Allow for the user to "tack on" a METS file?
+De * Allow for the user to "tack on" a METS file?
    * Develop automatic generation of metadata
      * Based on location in hierarchy?
      * Based on Parent's metadata?
@@ -86,7 +86,7 @@ D  * Escape . to mean \. and * to mean .*
 D  * Use hideable panels
 D  * Change tab wrap style to scroll
 D  * Just use hints for metadata tabs
-     * Metadata tabs labeled as "hint" + "label"
+D    * Metadata tabs labeled as "hint" + "label"
 D  * Use METS ID safe strings (no ":", " ", and limit length to 64)
      - Used unique number (unique across JVM)
 D  * Integrate Filtering
@@ -103,10 +103,10 @@ D  * Develop generic metadata API so that new formats can be "dropped in"
 
    CRules Task:
    * Allow for a way to check relationships of two nodes
-   * Allow for a way to save new CRules.xml
-   * Check to make sure ConversionRulesTask never actually *changes* its conversionRules object (why?)
+D  * Allow for a way to save new CRules.xml
+D  * Check to make sure ConversionRulesTask never actually *changes* its conversionRules object
    * Warn if there is more than one DatastreamTemplate of any type per Entry
-   * Use a map to go from nodeType to DTs, OTs, and Namespaces
+D  * Use a map to go from nodeType to DTs, OTs, and from alias to Namespaces
    * Allow for visualization of graph
 D    * Allow for visualization of all relationships
      * Allow for relationship classes to be individually viewable
@@ -127,10 +127,9 @@ D  * Import it
 D  * Slightly confusing/inaccurate way of representing primitiveRels     
 
    General GUI:
-   * Make GUI pretty
-     * Use icons rather than text
-     * Get some decent icons
-   * Find a nice way to display actions available
+D  * Make GUI pretty
+D    * Use icons rather than text
+D    * Get some decent icons
 D  * Make Hideable panels optionally resizeable
 D  * Changed "File System" to "File Select"
 D  * Button to switch UI Look and Feels

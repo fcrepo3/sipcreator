@@ -1,6 +1,7 @@
 package fedora.services.sipcreator.tasks;
 
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -11,12 +12,14 @@ import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -35,8 +38,8 @@ import org.xml.sax.SAXException;
 
 import beowulf.gui.Utility;
 import beowulf.util.DOMUtility;
+import fedora.services.sipcreator.Constants;
 import fedora.services.sipcreator.ConversionRules;
-import fedora.services.sipcreator.ExploreChildren;
 import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
@@ -47,7 +50,7 @@ import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.metadata.MinimalMetadata;
 import fedora.services.sipcreator.utility.CheckRenderer;
 
-public class FileSelectTask extends JPanel {
+public class FileSelectTask extends JPanel implements Constants {
 
     private static final long serialVersionUID = 4051332249108427830L;
     
@@ -55,7 +58,8 @@ public class FileSelectTask extends JPanel {
     
     private UniversalAcceptor acceptor = new UniversalAcceptor();
     
-    private OpenFileAction openFileAction = new OpenFileAction();
+    private OpenFolderAction openFolderAction = new OpenFolderAction();
+    private OpenZipFileAction openZipFileAction = new OpenZipFileAction();
     private EventHandler eventHandler = new EventHandler();
     
     //Data structures and UI components involved with the file browsing task
@@ -73,7 +77,11 @@ public class FileSelectTask extends JPanel {
         fileSelectTreeDisplay.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         
         JPanel tempP1 = new JPanel(new BorderLayout());
-        tempP1.add(new JButton(openFileAction), BorderLayout.EAST);
+        tempP1.add(new JPanel(), BorderLayout.CENTER);
+        JPanel tempP2 = new JPanel(new GridLayout(1, 0));
+        tempP2.add(new JButton(openFolderAction));
+        tempP2.add(new JButton(openZipFileAction));
+        tempP1.add(tempP2, BorderLayout.EAST);
         
         setLayout(new BorderLayout(5, 5));
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -99,10 +107,41 @@ public class FileSelectTask extends JPanel {
         return (rootNode == null ? null : rootNode.getEntry());
     }
     
-    public OpenFileAction getOpenFileAction() {
-        return openFileAction;
+    public OpenFolderAction getOpenFolderAction() {
+        return openFolderAction;
     }
     
+    public OpenZipFileAction getOpenZipFileAction() {
+        return openZipFileAction;
+    }
+    
+    
+    private class ExploreChildren implements Runnable {
+        
+        public void run() {
+            Vector queue = new Vector();
+            queue.add(getRootEntry());
+            
+            creator.getProgressBar().setIndeterminate(true);
+            
+            while (queue.size() > 0) {
+                SelectableEntry entry = (SelectableEntry)queue.remove(0);
+                
+                for (int ctr = 0; ctr < entry.getChildCount(acceptor); ctr++) {
+                    queue.add(entry.getChildAt(ctr, acceptor));
+                    Thread.yield();
+                }
+                
+                creator.getProgressBar().setValue(1);
+            }
+            
+            creator.getProgressBar().setIndeterminate(false);
+            creator.getProgressBar().setMaximum(1);
+            creator.getProgressBar().setMinimum(0);
+        }
+        
+    }
+
     
     private class EventHandler extends MouseAdapter {
         
@@ -141,19 +180,20 @@ public class FileSelectTask extends JPanel {
         
     }
 
-    public class OpenFileAction extends AbstractAction {
+    public class OpenFolderAction extends AbstractAction {
 
         private static final long serialVersionUID = 3763096349595678519L;
-
-        public OpenFileAction() {
-            putValue(Action.NAME, "Open File");
-            putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory/zip file");
+        
+        public OpenFolderAction() {
+            //putValue(Action.NAME, "Open File");
+            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-folder.png"));
+            putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory file");
         }
         
         
         public void actionPerformed(ActionEvent ae) {
             JFileChooser fileChooser = creator.getFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
             int choice = fileChooser.showOpenDialog(creator);
             if (choice != JFileChooser.APPROVE_OPTION) return;
@@ -170,12 +210,12 @@ public class FileSelectTask extends JPanel {
             try {
                 if (file.isDirectory()) {
                     openDirectory(file);
-                    ExploreChildren explorer = new ExploreChildren(getRootEntry(), creator);
+                    ExploreChildren explorer = new ExploreChildren();
                     Thread t = new Thread(explorer, "FileSystemExplorer");
                     t.setPriority(Thread.MIN_PRIORITY);
                     t.start();
                 } else {
-                    openZipFile(file);
+                    JOptionPane.showMessageDialog(creator, "You must choose a directory to open!");
                 }
                 
                 creator.getCurrentFileLabel().setText(file.getCanonicalPath());
@@ -198,10 +238,48 @@ public class FileSelectTask extends JPanel {
             rootEntry = new FileSystemEntry(file, null, creator);
             rootEntry.setSelectionLevel(FileSystemEntry.UNSELECTED, acceptor);
 
-            creator.getMetadataView().closeAllTabs();
+            creator.getMetadataEntryTask().closeAllTabs();
             creator.getMetadataEntryTask().updateTree(rootEntry);
             updateTree(rootEntry);
             System.gc();
+        }
+        
+    }
+    
+    public class OpenZipFileAction extends AbstractAction {
+        
+        private static final long serialVersionUID = 3937836713440462314L;
+
+        public OpenZipFileAction() {
+            //putValue(Action.NAME, "Open ZIP");
+            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-mime-application-zip.png"));
+            putValue(Action.SHORT_DESCRIPTION, "Open a previously saved SIP file");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            JFileChooser fileChooser = creator.getFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setFileFilter(creator.getZIPFilter());
+
+            int choice = fileChooser.showOpenDialog(creator);
+            if (choice != JFileChooser.APPROVE_OPTION) return;
+            
+            File file = fileChooser.getSelectedFile();
+            
+            if (fileSelectTreeModel.getRoot() != null) {
+                choice = JOptionPane.showConfirmDialog(creator,
+                        "This change will erase all metadata.  Continue?",
+                        "Warning", JOptionPane.YES_NO_OPTION);
+                if (choice != JOptionPane.YES_OPTION) return;
+            }
+            
+            try {
+                openZipFile(file);
+                creator.getCurrentFileLabel().setText(file.getCanonicalPath());
+            } catch (Exception e) {
+                Utility.showExceptionDialog(creator, e);
+                return;
+            }
         }
         
         public void openZipFile(File file) throws IOException, SAXException {
@@ -210,13 +288,12 @@ public class FileSelectTask extends JPanel {
             rootEntry = handleZipFile(new ZipFile(file));
             rootEntry.setSelectionLevel(FileSystemEntry.FULLY_SELECTED, acceptor);
 
-            creator.getMetadataView().closeAllTabs();
+            creator.getMetadataEntryTask().closeAllTabs();
             creator.getMetadataEntryTask().updateTree(rootEntry);
             updateTree(rootEntry);
             System.gc();
         }
-
-        
+  
         private ZipFileEntry handleZipFile(ZipFile zipFile) throws IOException, SAXException {
             Enumeration entryEnumeration = zipFile.entries();
             ZipEntry currentEntry;

@@ -7,7 +7,9 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -16,6 +18,7 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -29,6 +32,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -36,13 +41,18 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import beowulf.gui.HideablePanel;
+import beowulf.gui.JGraph;
 import beowulf.gui.ScrollingPanel;
 import beowulf.gui.SemiEditableTableModel;
 import beowulf.gui.Utility;
+import fedora.services.sipcreator.Constants;
 import fedora.services.sipcreator.ConversionRules;
+import fedora.services.sipcreator.ConversionRulesGraph;
+import fedora.services.sipcreator.ConversionRulesJGraph;
 import fedora.services.sipcreator.SIPCreator;
+import fedora.services.sipcreator.ConversionRules.DatastreamTemplate;
 
-public class ConversionRulesTask extends JPanel implements ListSelectionListener, Observer {
+public class ConversionRulesTask extends JPanel implements ListSelectionListener, DocumentListener, Observer, Constants {
 
     private static final long serialVersionUID = 3257853168707645496L;
     
@@ -50,11 +60,15 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     private LoadConversionRulesAction loadConversionRulesAction = new LoadConversionRulesAction();
     private LoadConversionRulesWebAction loadConversionRulesWebAction = new LoadConversionRulesWebAction();
+    private SaveConversionRulesAction saveConversionRulesAction = new SaveConversionRulesAction();
+    private GenerateGraphAction generateGraphAction = new GenerateGraphAction();
+    
+    private ConversionRulesJGraph graphView = new ConversionRulesJGraph();
     
     //Data structures and UI components involved with the conversion rules task
     private JLabel crulesLabel = new JLabel();
     
-    private ConversionRules rules;
+    private ConversionRules rules = new ConversionRules();
     
     private JTextArea descriptionArea = new JTextArea();
     
@@ -77,7 +91,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     public ConversionRulesTask(SIPCreator newCreator) {
         creator = newCreator;
-        rules = new ConversionRules();
+        rules.addObserver(this);
         
         //Minimum sizes are explicitly set so that labels with long text entries
         //will not keep the containing JSplitPane from resizing down past the point
@@ -88,7 +102,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         descriptionArea.setBackground(getBackground());
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
-        descriptionArea.setEditable(false);
+        descriptionArea.getDocument().addDocumentListener(this);
         
         namespaceTableModel = new SemiEditableTableModel(new Object[]{"alias", "uri"}, 0, new int[]{});
         namespaceTableDisplay = new JTable(namespaceTableModel);
@@ -102,9 +116,10 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         templateListDisplay.addListSelectionListener(this);
         
         templateDescriptionArea.setBackground(getBackground());
-        templateDescriptionArea.setEditable(false);
         templateDescriptionArea.setLineWrap(true);
         templateDescriptionArea.setWrapStyleWord(true);
+        templateDescriptionArea.getDocument().addDocumentListener(this);
+        templateDescriptionArea.setEditable(false);
         
         templateAttributeTableModel = new SemiEditableTableModel(new Object[]{"name", "value"}, 0, new int[]{});
         templateAttributeTableDisplay = new JTable(templateAttributeTableModel);
@@ -124,18 +139,36 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         relationshipTargetTableDisplay.setRowSelectionAllowed(true);
         relationshipTargetTableDisplay.setPreferredScrollableViewportSize(DEFAULT_VIEWPORT_SIZE);
 
-        setLayout(new BorderLayout(5, 5));
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        add(createNorthPanel(), BorderLayout.NORTH);
-        add(createCenterPanel(), BorderLayout.CENTER);
+        JSplitPane centerPane = new JSplitPane();
+        centerPane.setLeftComponent(createLeftPanel());
+        centerPane.setRightComponent(createRightPanel());
+        centerPane.setOneTouchExpandable(true);
+        centerPane.setResizeWeight(0.5);
+        
+        setLayout(new BorderLayout());
+        add(centerPane, BorderLayout.CENTER);
+    }
+    
+    private JComponent createRightPanel() {
+        return graphView;
+    }
+    
+    private JComponent createLeftPanel() {
+        JPanel left = new JPanel(new BorderLayout(5, 5));
+        left.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        left.add(createNorthPanel(), BorderLayout.NORTH);
+        left.add(createCenterPanel(), BorderLayout.CENTER);
+        return left;
     }
     
     private JComponent createNorthPanel() {
         JPanel result = new JPanel(new BorderLayout());        
         result.add(crulesLabel, BorderLayout.CENTER);
-        JPanel tempP2 = new JPanel(new GridLayout(1, 2));
+        JPanel tempP2 = new JPanel(new GridLayout(1, 0));
         tempP2.add(new JButton(loadConversionRulesAction));
         tempP2.add(new JButton(loadConversionRulesWebAction));
+        tempP2.add(new JButton(saveConversionRulesAction));
+        tempP2.add(new JButton(generateGraphAction));
         result.add(tempP2, BorderLayout.EAST);
         return result;
     }
@@ -241,21 +274,18 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     }
     
     
-    public void update(Observable o, Object arg) {
-        updateRules(crulesLabel.getText(), rules);
-    }
-    
     public void updateRules(String sourceName, ConversionRules newRules) {
-        if (rules != null) {
-            rules.deleteObserver(this);
-        }
-        rules = newRules;
-        rules.addObserver(this);
+        rules.set(newRules);
+        
         crulesLabel.setText(sourceName);
+        crulesLabel.setToolTipText(sourceName);
         descriptionArea.setText(newRules.getDescription());
         
-        while (namespaceTableModel.getRowCount() > 0) namespaceTableModel.removeRow(0);
+        while (namespaceTableModel.getRowCount() > 0) {
+            namespaceTableModel.removeRow(0);
+        }
         templateListModel.clear();
+        templateDescriptionArea.setText("");
 
         for (int ctr = 0; ctr < newRules.getNamespaceCount(); ctr++) {
             ConversionRules.Namespace namespace = newRules.getNamespace(ctr);
@@ -275,15 +305,33 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         return rules;
     }
     
-    public void openURL(String value) throws SAXException, IOException {
-        loadConversionRulesWebAction.openURL(value);
+    public JGraph getGraphView() {
+        return graphView;
     }
     
-    public void openFile(File file) throws SAXException, IOException {
-        loadConversionRulesAction.openFile(file);
+    public LoadConversionRulesAction getLoadConversionRulesAction() {
+        return loadConversionRulesAction;
+    }
+
+    public LoadConversionRulesWebAction getLoadConversionRulesWebAction() {
+        return loadConversionRulesWebAction;
+    }
+
+    public SaveConversionRulesAction getSaveConversionRulesAction() {
+        return saveConversionRulesAction;
+    }
+    
+    public GenerateGraphAction getGenerateGraphAction() {
+        return generateGraphAction;
     }
     
 
+    public void update(Observable o, Object arg) {
+        rules.deleteObserver(this);
+        updateRules(crulesLabel.getText(), rules);
+        rules.addObserver(this);
+    }
+    
     public void valueChanged(ListSelectionEvent e) {
         if (e.getSource() == templateListDisplay) {
             templateTypeLabel.setText("");
@@ -296,7 +344,11 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
             }
             
             Object selected = templateListDisplay.getSelectedValue();
-            if (selected == null) return;
+            if (selected == null) {
+                templateDescriptionArea.setEditable(false);
+                return;
+            }
+            templateDescriptionArea.setEditable(true);
             
             if (!(selected instanceof ConversionRules.DatastreamTemplate)) return;
             ConversionRules.DatastreamTemplate casted = (ConversionRules.DatastreamTemplate)selected;
@@ -333,21 +385,56 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         }
     }
     
+    public void changedUpdate(DocumentEvent e) {
+        rules.deleteObserver(this);
+        if (e.getDocument() == descriptionArea.getDocument()) {
+            rules.setDescription(descriptionArea.getText());
+        } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
+            Object selected = templateListDisplay.getSelectedValue();
+            ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+        }
+        rules.addObserver(this);
+    }
+
+    public void insertUpdate(DocumentEvent e) {
+        rules.deleteObserver(this);
+        if (e.getDocument() == descriptionArea.getDocument()) {
+            rules.setDescription(descriptionArea.getText());
+        } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
+            Object selected = templateListDisplay.getSelectedValue();
+            ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+        }
+        rules.addObserver(this);
+    }
+
+    public void removeUpdate(DocumentEvent e) {
+        rules.deleteObserver(this);
+        if (e.getDocument() == descriptionArea.getDocument()) {
+            rules.setDescription(descriptionArea.getText());
+        } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
+            Object selected = templateListDisplay.getSelectedValue();
+            ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+        }
+        rules.addObserver(this);
+    }
+
     
     public class LoadConversionRulesAction extends AbstractAction {
         
         private static final long serialVersionUID = 3690752916960983351L;
 
-        private JFileChooser fileChooser = new JFileChooser(".");
-        
         public LoadConversionRulesAction() {
-            putValue(Action.NAME, "Load CRules");
+            //putValue(Action.NAME, "Load CRules");
+            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-folder.png"));
             putValue(Action.SHORT_DESCRIPTION, "Load in a conversion rules file");
         }
         
         public void actionPerformed(ActionEvent ae) {
             try {
+                JFileChooser fileChooser = creator.getFileChooser();
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.setFileFilter(creator.getXMLFilter());
+                
                 int choice = fileChooser.showOpenDialog(creator);
                 if (choice != JFileChooser.APPROVE_OPTION) return;
             
@@ -370,7 +457,8 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         private static final long serialVersionUID = -332126288068464408L;
 
         public LoadConversionRulesWebAction() {
-            putValue(Action.NAME, "Load CRules Web");
+            //putValue(Action.NAME, "Load CRules Web");
+            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gftp.png"));
             putValue(Action.SHORT_DESCRIPTION, "Load in a conversion rules file from the web");
         }
         
@@ -393,4 +481,59 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         
     }
 
+    public class SaveConversionRulesAction extends AbstractAction {
+        
+        private static final long serialVersionUID = 2024410009193247878L;
+
+        public SaveConversionRulesAction() {
+            //putValue(Action.NAME, "Save CRules");
+            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-dev-floppy.png"));
+            putValue(Action.SHORT_DESCRIPTION, "Save the conversion rules to a file");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            try {
+                JFileChooser fileChooser = creator.getFileChooser();
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.setFileFilter(creator.getXMLFilter());
+                
+                int choice = fileChooser.showSaveDialog(creator);
+                if (choice != JFileChooser.APPROVE_OPTION) return;
+
+                if (fileChooser.getSelectedFile().exists()) {
+                    choice = JOptionPane.showConfirmDialog(creator, "File exists.  Overwrite?");
+                    if (choice != JOptionPane.YES_OPTION) return;
+                }
+                saveFile(fileChooser.getSelectedFile());
+            } catch (Exception e) {
+                Utility.showExceptionDialog(creator, e);
+            }
+        }
+
+        public void saveFile(File file) throws IOException {
+            PrintWriter pw = new PrintWriter(new FileOutputStream(file));
+            pw.print(rules.toXML());
+            pw.close();
+        }
+        
+    }
+    
+    public class GenerateGraphAction extends AbstractAction {
+        
+        private static final long serialVersionUID = 5055044742911980919L;
+
+        private GenerateGraphAction() {
+            //putValue(Action.NAME, "Generate Graph");
+            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "stock_reload.png"));
+            putValue(Action.SHORT_DESCRIPTION, "Generate a graph based on the current rules and tree");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            if (creator.getFileSelectTask().getRootEntry() == null) return;
+            graphView.setModel(new ConversionRulesGraph(rules, creator.getFileSelectTask().getRootEntry()));
+            graphView.repaint();
+        }
+        
+    }
+    
 }
