@@ -5,13 +5,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Observable;
-import java.util.Observer;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -36,6 +35,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -52,11 +53,18 @@ import fedora.services.sipcreator.ConversionRulesJGraph;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.ConversionRules.DatastreamTemplate;
 
-public class ConversionRulesTask extends JPanel implements ListSelectionListener, DocumentListener, Observer, Constants {
+public class ConversionRulesTask extends JPanel implements ListSelectionListener, Constants {
 
     private static final long serialVersionUID = 3257853168707645496L;
     
     private static final Dimension DEFAULT_VIEWPORT_SIZE = new Dimension(256, 128);
+    
+    private static final String ADD_ATTRIBUTE_TEXT = "Add Attribute";
+    private static final String DEL_ATTRIBUTE_TEXT = "Delete Attribute";
+    private static final String ADD_NAMESPACE_TEXT = "Add Namespace";
+    private static final String DEL_NAMESPACE_TEXT = "Delete Namespace";
+    
+    private UpdateListener updater = new UpdateListener();
     
     private LoadConversionRulesAction loadConversionRulesAction = new LoadConversionRulesAction();
     private LoadConversionRulesWebAction loadConversionRulesWebAction = new LoadConversionRulesWebAction();
@@ -91,7 +99,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     public ConversionRulesTask(SIPCreator newCreator) {
         creator = newCreator;
-        rules.addObserver(this);
         
         //Minimum sizes are explicitly set so that labels with long text entries
         //will not keep the containing JSplitPane from resizing down past the point
@@ -102,14 +109,16 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         descriptionArea.setBackground(getBackground());
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
-        descriptionArea.getDocument().addDocumentListener(this);
+        descriptionArea.getDocument().addDocumentListener(updater);
         
-        namespaceTableModel = new SemiEditableTableModel(new Object[]{"alias", "uri"}, 0, new int[]{});
+        namespaceTableModel = new SemiEditableTableModel(new Object[]{"alias", "uri"}, 0, new int[]{1});
+        namespaceTableModel.addTableModelListener(updater);
         namespaceTableDisplay = new JTable(namespaceTableModel);
         namespaceTableDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         namespaceTableDisplay.setCellSelectionEnabled(false);
         namespaceTableDisplay.setRowSelectionAllowed(true);
         namespaceTableDisplay.setPreferredScrollableViewportSize(DEFAULT_VIEWPORT_SIZE);
+        namespaceTableDisplay.setBackground(getBackground());
         
         templateListDisplay = new JList(templateListModel);
         templateListDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -118,15 +127,17 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         templateDescriptionArea.setBackground(getBackground());
         templateDescriptionArea.setLineWrap(true);
         templateDescriptionArea.setWrapStyleWord(true);
-        templateDescriptionArea.getDocument().addDocumentListener(this);
+        templateDescriptionArea.getDocument().addDocumentListener(updater);
         templateDescriptionArea.setEditable(false);
         
-        templateAttributeTableModel = new SemiEditableTableModel(new Object[]{"name", "value"}, 0, new int[]{});
+        templateAttributeTableModel = new SemiEditableTableModel(new Object[]{"name", "value"}, 0, new int[]{1});
+        templateAttributeTableModel.addTableModelListener(updater);
         templateAttributeTableDisplay = new JTable(templateAttributeTableModel);
         templateAttributeTableDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         templateAttributeTableDisplay.setCellSelectionEnabled(false);
         templateAttributeTableDisplay.setRowSelectionAllowed(true);
         templateAttributeTableDisplay.setPreferredScrollableViewportSize(DEFAULT_VIEWPORT_SIZE);
+        templateAttributeTableDisplay.setBackground(getBackground());
         
         relationshipListDisplay = new JList(relationshipListModel);
         relationshipListDisplay.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -181,7 +192,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         tempP2.setTitle("Description");
         tempP1.add(tempP2); tempP1.add(Box.createVerticalStrut(5));
         
-        tempP2 = new HideablePanel(createScrollPane(namespaceTableDisplay));
+        tempP2 = new HideablePanel(getNamespaceComponent());
         tempP2.setTitle("Namespaces");
         tempP1.add(tempP2); tempP1.add(Box.createVerticalStrut(5));
 
@@ -208,6 +219,40 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         return scrollPane;
     }
     
+    private JComponent getNamespaceComponent() {
+        JPanel tempP1 = new JPanel();
+        JButton tempB;
+        
+        tempB = new JButton(ADD_NAMESPACE_TEXT);
+        tempB.addActionListener(updater);
+        tempP1.add(tempB);
+        tempB = new JButton(DEL_NAMESPACE_TEXT);
+        tempB.addActionListener(updater);
+        tempP1.add(tempB);
+        
+        JPanel result = new JPanel(new BorderLayout());
+        result.add(createScrollPane(namespaceTableDisplay), BorderLayout.CENTER);
+        result.add(tempP1, BorderLayout.SOUTH);
+        return result;
+    }
+    
+    private JComponent getAttributeComponent() {
+        JPanel tempP1 = new JPanel();
+        JButton tempB;
+        
+        tempB = new JButton(ADD_ATTRIBUTE_TEXT);
+        tempB.addActionListener(updater);
+        tempP1.add(tempB);
+        tempB = new JButton(DEL_ATTRIBUTE_TEXT);
+        tempB.addActionListener(updater);
+        tempP1.add(tempB);
+        
+        JPanel result = new JPanel(new BorderLayout());
+        result.add(createScrollPane(templateAttributeTableDisplay), BorderLayout.CENTER);
+        result.add(tempP1, BorderLayout.SOUTH);
+        return result;
+    }
+    
     private JComponent getObjectComponent() {
         JPanel tempP;
         
@@ -224,7 +269,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         topRight.setLeftComponent(tempP); tempP = null;
         tempP = new JPanel(new BorderLayout());
         tempP.add(new JLabel("Attributes"), BorderLayout.NORTH);
-        tempP.add(createScrollPane(templateAttributeTableDisplay), BorderLayout.CENTER);
+        tempP.add(getAttributeComponent(), BorderLayout.CENTER);
         tempP.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         topRight.setRightComponent(tempP); tempP = null;
         topRight.setResizeWeight(0.5);
@@ -279,7 +324,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         
         crulesLabel.setText(sourceName);
         crulesLabel.setToolTipText(sourceName);
-        descriptionArea.setText(newRules.getDescription());
+        descriptionArea.setText(rules.getDescription());
         
         while (namespaceTableModel.getRowCount() > 0) {
             namespaceTableModel.removeRow(0);
@@ -287,17 +332,17 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         templateListModel.clear();
         templateDescriptionArea.setText("");
 
-        for (int ctr = 0; ctr < newRules.getNamespaceCount(); ctr++) {
-            ConversionRules.Namespace namespace = newRules.getNamespace(ctr);
+        for (int ctr = 0; ctr < rules.getNamespaceCount(); ctr++) {
+            ConversionRules.Namespace namespace = rules.getNamespace(ctr);
             namespaceTableModel.addRow(new Object[]{namespace.getAlias(), namespace.getURI()});
         }
         
-        for (int ctr = 0; ctr < newRules.getDatastreamTemplateCount(); ctr++) {
-            templateListModel.addElement(newRules.getDatastreamTemplate(ctr));
+        for (int ctr = 0; ctr < rules.getDatastreamTemplateCount(); ctr++) {
+            templateListModel.addElement(rules.getDatastreamTemplate(ctr));
         }
         
-        for (int ctr = 0; ctr < newRules.getObjectTemplateCount(); ctr++) {
-            templateListModel.addElement(newRules.getObjectTemplate(ctr));
+        for (int ctr = 0; ctr < rules.getObjectTemplateCount(); ctr++) {
+            templateListModel.addElement(rules.getObjectTemplate(ctr));
         }
     }
     
@@ -326,12 +371,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     }
     
 
-    public void update(Observable o, Object arg) {
-        rules.deleteObserver(this);
-        updateRules(crulesLabel.getText(), rules);
-        rules.addObserver(this);
-    }
-    
     public void valueChanged(ListSelectionEvent e) {
         if (e.getSource() == templateListDisplay) {
             templateTypeLabel.setText("");
@@ -385,39 +424,114 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         }
     }
     
-    public void changedUpdate(DocumentEvent e) {
-        rules.deleteObserver(this);
-        if (e.getDocument() == descriptionArea.getDocument()) {
-            rules.setDescription(descriptionArea.getText());
-        } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
-            Object selected = templateListDisplay.getSelectedValue();
-            ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+    
+    private class UpdateListener implements DocumentListener, TableModelListener, ActionListener {
+        
+        public void changedUpdate(DocumentEvent e) {
+            updateDocument(e);
         }
-        rules.addObserver(this);
-    }
 
-    public void insertUpdate(DocumentEvent e) {
-        rules.deleteObserver(this);
-        if (e.getDocument() == descriptionArea.getDocument()) {
-            rules.setDescription(descriptionArea.getText());
-        } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
-            Object selected = templateListDisplay.getSelectedValue();
-            ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+        public void insertUpdate(DocumentEvent e) {
+            updateDocument(e);
         }
-        rules.addObserver(this);
-    }
 
-    public void removeUpdate(DocumentEvent e) {
-        rules.deleteObserver(this);
-        if (e.getDocument() == descriptionArea.getDocument()) {
-            rules.setDescription(descriptionArea.getText());
-        } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
-            Object selected = templateListDisplay.getSelectedValue();
-            ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+        public void removeUpdate(DocumentEvent e) {
+            updateDocument(e);
         }
-        rules.addObserver(this);
-    }
 
+        private void updateDocument(DocumentEvent e) {
+            if (e.getDocument() == descriptionArea.getDocument()) {
+                rules.setDescription(descriptionArea.getText());
+            } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
+                Object selected = templateListDisplay.getSelectedValue();
+                ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
+            }
+            System.out.println(rules);
+        }
+        
+        
+        public void tableChanged(TableModelEvent e) {
+            if (e.getType() != TableModelEvent.UPDATE) return;
+
+            if (e.getSource() == namespaceTableModel) {
+                String alias = (String)namespaceTableModel.getValueAt(e.getFirstRow(), 0);
+                String newURI = (String)namespaceTableModel.getValueAt(e.getFirstRow(), 1);
+                rules.getNamespace(alias).setURI(newURI);
+            } else if (e.getSource() == templateAttributeTableModel) {
+                String name = (String)templateAttributeTableModel.getValueAt(e.getFirstRow(), 0);
+                String value = (String)templateAttributeTableModel.getValueAt(e.getFirstRow(), 1);
+                ConversionRules.DatastreamTemplate selected =
+                    (ConversionRules.DatastreamTemplate)templateListDisplay.getSelectedValue();
+                selected.addAttribute(name, value);
+            }
+        }
+
+        
+        public void actionPerformed(ActionEvent ae) {
+            String cmd = ae.getActionCommand();
+            
+            if (cmd == null) {
+                return;
+            } else if (cmd.equals(ADD_NAMESPACE_TEXT)) {
+                addNamespace();
+            } else if (cmd.equals(DEL_NAMESPACE_TEXT)) {
+                deleteNamespace();
+            } else if (cmd.equals(ADD_ATTRIBUTE_TEXT)) {
+                addAttribute();
+            } else if (cmd.equals(DEL_ATTRIBUTE_TEXT)) {
+                deleteAttribute();
+            }
+            
+            System.out.println(rules);
+        }
+        
+        private void addNamespace() {
+            String result = JOptionPane.showInputDialog(creator, "What is the alias of the new namespace?");
+            if (result == null) return;
+            
+            if (rules.getNamespace(result) != null) {
+                JOptionPane.showMessageDialog(creator, "A namespace of that alias already exists!");
+                return;
+            }
+            namespaceTableModel.addRow(new Object[]{result, ""});
+            rules.addNamespace(new ConversionRules.Namespace(result));
+        }
+
+        private void deleteNamespace() {
+            int selectedRow = namespaceTableDisplay.getSelectedRow();
+            if (selectedRow == -1) return;
+            namespaceTableModel.removeRow(selectedRow);
+            rules.removeNamespace(selectedRow);
+        }
+        
+        private void addAttribute() {
+            ConversionRules.DatastreamTemplate selected =
+                (ConversionRules.DatastreamTemplate)templateListDisplay.getSelectedValue();
+            if (selected == null) return;
+            
+            String result = JOptionPane.showInputDialog(creator, "What is the name of the new attribute?");
+            if (result == null) return;
+            
+            if (selected.getAttribute(result) != null) {
+                JOptionPane.showMessageDialog(creator, "An attribute of that name already exists!");
+                return;
+            }
+            templateAttributeTableModel.addRow(new Object[]{result, ""});
+            selected.addAttribute(result, "");
+        }
+        
+        private void deleteAttribute() {
+            ConversionRules.DatastreamTemplate selected =
+                (ConversionRules.DatastreamTemplate)templateListDisplay.getSelectedValue();
+            if (selected == null) return;
+            
+            int selectedRow = templateAttributeTableDisplay.getSelectedRow();
+            if (selectedRow == -1) return;
+            templateAttributeTableModel.removeRow(selectedRow);
+            selected.removeAttribute(selectedRow);
+        }
+        
+    }
     
     public class LoadConversionRulesAction extends AbstractAction {
         

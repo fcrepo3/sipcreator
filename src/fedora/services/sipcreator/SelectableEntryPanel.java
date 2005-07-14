@@ -227,8 +227,8 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
                         "Add New Template", JOptionPane.YES_NO_OPTION);
                 if (choice != JOptionPane.YES_OPTION) return;
                 
-                ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate();
-                newDT.setNodeType(metadataTypeBox.getSelectedItem().toString());
+                ConversionRules.DatastreamTemplate newDT =
+                    new ConversionRules.DatastreamTemplate(metadataTypeBox.getSelectedItem().toString());
                 creator.getConversionRulesTask().getRules().addDatastreamTemplate(newDT);
                 metadataTypeBox.setSelectedItem(newDT);
             }
@@ -247,8 +247,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
                         "Would you like to add \"" + type + "\" as a new datastream template?",
                         "Add New Template", JOptionPane.YES_NO_OPTION);
                 if (choice == JOptionPane.YES_OPTION) {
-                    ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate();
-                    newDT.setNodeType(type);
+                    ConversionRules.DatastreamTemplate newDT = new ConversionRules.DatastreamTemplate(type);
                     rules.addDatastreamTemplate(newDT);
                     metadataTypeBox.setSelectedItem(newDT);
                 }
