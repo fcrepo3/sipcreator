@@ -72,9 +72,9 @@ public class MetadataNode implements TreeNode, Observer {
     }
 
     public String toString() {
-        return "(" + metadata.getID() + ") " + metadata.getHint();
+        return "(" + metadata.getID() + ") " + metadata.getShortName();
     }
-
+    
 
     public void update(Observable o, Object arg) {
         model.nodeChanged(this);

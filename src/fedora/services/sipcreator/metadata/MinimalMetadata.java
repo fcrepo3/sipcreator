@@ -33,7 +33,7 @@ public class MinimalMetadata extends Metadata implements Constants {
         return new MinimalMetadataPanel(this);
     }
 
-    public String getHint() {
+    public String getShortName() {
         return "Plain: " + getLabel();
     }
     

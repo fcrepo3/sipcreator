@@ -83,20 +83,20 @@ public abstract class SelectableEntry extends Observable {
     
     public void addMetadata(Metadata newMetadata) {
         metadataList.add(newMetadata);
+        newMetadata.setEntry(this);
         setChanged();
         notifyObservers();
     }
     
     public void removeMetadata(int index) {
-        metadataList.remove(index);
+        Metadata metadata = (Metadata)metadataList.remove(index);
+        metadata.setEntry(null);
         setChanged();
         notifyObservers();
     }
     
     public void removeMetadata(Metadata oldMetadata) {
-        metadataList.remove(oldMetadata);
-        setChanged();
-        notifyObservers();
+        removeMetadata(metadataList.indexOf(oldMetadata));
     }
     
     public String getMimeType() {
@@ -136,25 +136,29 @@ public abstract class SelectableEntry extends Observable {
         boolean unselected = false;
         boolean selected = false;
         boolean partially = false;
+        boolean changed = false;
         
         for (int ctr = 0; ctr < getChildCount(acceptor); ctr++) {
             SelectableEntry entry = getChildAt(ctr, acceptor);
             switch(entry.getSelectionLevel()){
-            case FileSystemEntry.UNSELECTED: unselected = true; break; 
-            case FileSystemEntry.PARTIALLY_SELECTED: partially = true; break;
-            case FileSystemEntry.FULLY_SELECTED: selected = true; break;
+            case UNSELECTED: unselected = true; break; 
+            case PARTIALLY_SELECTED: partially = true; break;
+            case FULLY_SELECTED: selected = true; break;
             }
         }
         
         if (unselected && !partially && !selected) {
-            selectionLevel = SelectableEntry.UNSELECTED;
+            changed = selectionLevel != UNSELECTED;
+            selectionLevel = UNSELECTED;
         } else if (selected && !partially && !unselected) {
-            selectionLevel = SelectableEntry.FULLY_SELECTED;
+            changed = selectionLevel != FULLY_SELECTED;
+            selectionLevel = FULLY_SELECTED;
         } else {
-            selectionLevel = SelectableEntry.PARTIALLY_SELECTED;
+            changed = selectionLevel != PARTIALLY_SELECTED;
+            selectionLevel = PARTIALLY_SELECTED;
         }
         
-        if (parent != null) {
+        if (changed && parent != null) {
             parent.setSelectionLevelFromChildren(acceptor);
         }
     }

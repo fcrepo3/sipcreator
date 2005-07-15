@@ -207,7 +207,7 @@ public class DCFields extends Metadata implements Constants {
         }
     }
 
-    public String getHint() {
+    public String getShortName() {
         return "DC: " + getLabel();
     }
     

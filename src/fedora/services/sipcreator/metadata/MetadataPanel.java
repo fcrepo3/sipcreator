@@ -1,4 +1,5 @@
 package fedora.services.sipcreator.metadata;
+
 import javax.swing.JPanel;
 
 public abstract class MetadataPanel extends JPanel {

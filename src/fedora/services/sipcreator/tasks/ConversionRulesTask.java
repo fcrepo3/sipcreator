@@ -318,12 +318,8 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         return result;
     }
     
-    
-    public void updateRules(String sourceName, ConversionRules newRules) {
-        rules.set(newRules);
-        
-        crulesLabel.setText(sourceName);
-        crulesLabel.setToolTipText(sourceName);
+
+    public void updateRules() {
         descriptionArea.setText(rules.getDescription());
         
         while (namespaceTableModel.getRowCount() > 0) {
@@ -344,6 +340,15 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         for (int ctr = 0; ctr < rules.getObjectTemplateCount(); ctr++) {
             templateListModel.addElement(rules.getObjectTemplate(ctr));
         }
+    }
+    
+    public void updateRules(String sourceName, ConversionRules newRules) {
+        rules.set(newRules);
+        
+        crulesLabel.setText(sourceName);
+        crulesLabel.setToolTipText(sourceName);
+        
+        updateRules();
     }
     
     public ConversionRules getRules() {
@@ -444,6 +449,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 rules.setDescription(descriptionArea.getText());
             } else if (e.getDocument() == templateDescriptionArea.getDocument()) {
                 Object selected = templateListDisplay.getSelectedValue();
+                if (selected == null) return;
                 ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
             }
         }

@@ -5,6 +5,7 @@ import java.util.Observable;
 import org.w3c.dom.Element;
 
 import fedora.services.sipcreator.Constants;
+import fedora.services.sipcreator.SelectableEntry;
 
 public abstract class Metadata extends Observable implements Constants {
 
@@ -26,6 +27,8 @@ public abstract class Metadata extends Observable implements Constants {
     private String label = new String();
     
     private String type = new String();
+    
+    private SelectableEntry entry;
     
     public Metadata() {
         id = getNextID();
@@ -53,7 +56,19 @@ public abstract class Metadata extends Observable implements Constants {
         return type;
     }
     
-    public abstract String getHint();
+    public SelectableEntry getEntry() {
+        return entry;
+    }
+    
+    public abstract String getShortName();
+    
+    public String getDescriptiveName() {
+        return entry.getDescriptiveName() + " - (" + id + ") " + getShortName();
+    }
+    
+    public void setEntry(SelectableEntry newEntry) {
+        entry = newEntry;
+    }
     
     public void setLabel(String newLabel) {
         label = newLabel;

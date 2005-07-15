@@ -1,6 +1,7 @@
 package fedora.services.sipcreator.tasks;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -10,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -30,6 +32,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -37,7 +40,10 @@ import beowulf.gui.PopupListener;
 import beowulf.gui.Utility;
 import beowulf.util.StreamUtility;
 import fedora.services.sipcreator.Constants;
+import fedora.services.sipcreator.ConversionRules;
 import fedora.services.sipcreator.FileSystemEntry;
+import fedora.services.sipcreator.MetadataNode;
+import fedora.services.sipcreator.MetadataPanelWrapper;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntry;
 import fedora.services.sipcreator.SelectableEntryNode;
@@ -54,6 +60,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
     private static final long serialVersionUID = 3257850999698698808L;
     
     private FilterAction filterAction = new FilterAction();
+    private AddMetadataAction addMetadataAction = new AddMetadataAction();
     private SaveSIPAction saveSIPAction = new SaveSIPAction();
     private CloseCurrentTabAction closeCurrentTabAction = new CloseCurrentTabAction();
     private EventHandler eventHandler = new EventHandler();
@@ -123,6 +130,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
     private JPopupMenu createPopupMenu() {
         JPopupMenu result = new JPopupMenu();
         
+        result.add(addMetadataAction);
+        
         return result;
     }
     
@@ -157,8 +166,21 @@ public class MetadataEntryTask extends JPanel implements Constants {
         
     public void updateMetadata() {
         for (int ctr = 0; ctr < metadataView.getTabCount(); ctr++) {
-            ((SelectableEntryPanel)metadataView.getComponentAt(ctr)).updateMetadata();
+            Component c = metadataView.getComponent(ctr);
+            if (c instanceof SelectableEntryPanel) {
+                ((SelectableEntryPanel)c).updateMetadata();
+            } else if (c instanceof MetadataPanelWrapper) {
+                ((MetadataPanelWrapper)c).updateMetadata();
+            }
         }
+    }
+    
+    public TreeNode getSelectedNode() {
+        TreePath path = metadataTreeDisplay.getSelectionPath();
+        if (path == null) {
+            return null;
+        }
+        return (TreeNode)path.getLastPathComponent();
     }
     
     public FilterAction getFilterAction() {
@@ -173,6 +195,10 @@ public class MetadataEntryTask extends JPanel implements Constants {
         return saveSIPAction;
     }
     
+    public AddMetadataAction getAddMetadataAction() {
+        return addMetadataAction;
+    }
+    
     
     private class EventHandler extends MouseAdapter {
         
@@ -181,18 +207,91 @@ public class MetadataEntryTask extends JPanel implements Constants {
             
             TreePath path = metadataTreeDisplay.getSelectionPath();
             if (path == null) return;
-            if (!(path.getLastPathComponent() instanceof SelectableEntryNode)) return;
-            SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
             
-            int index = getIndexByToolTip(node.getEntry().toString());
-            
-            if (index == -1) {
-                SelectableEntryPanel listPanel = new SelectableEntryPanel(node.getEntry(), creator);
-                metadataView.addTab(node.toString(), null, listPanel, node.getEntry().toString());
-                metadataView.setSelectedComponent(listPanel);
-            } else {
-                metadataView.setSelectedIndex(index);
+            if (path.getLastPathComponent() instanceof SelectableEntryNode) {
+                SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
+                int index = getIndexByToolTip(node.getEntry().getDescriptiveName());
+                
+                if (index == -1) {
+                    SelectableEntryPanel listPanel = new SelectableEntryPanel(node.getEntry());
+                    metadataView.addTab(node.getEntry().getShortName(), null,
+                            listPanel, node.getEntry().getDescriptiveName());
+                    metadataView.setSelectedComponent(listPanel);
+                } else {
+                    metadataView.setSelectedIndex(index);
+                }
+            } else if (path.getLastPathComponent() instanceof MetadataNode) {
+                MetadataNode node = (MetadataNode)path.getLastPathComponent();
+                int index = getIndexByToolTip(node.getMetadata().getDescriptiveName());
+                
+                if (index == -1) {
+                    MetadataPanelWrapper panel = new MetadataPanelWrapper(node.getMetadata().getPanel(), creator);
+                    metadataView.addTab(node.getMetadata().getShortName(), null,
+                            panel, node.getMetadata().getDescriptiveName());
+                    metadataView.setSelectedComponent(panel);
+                } else {
+                    metadataView.setSelectedIndex(index);
+                }
             }
+        }
+        
+    }
+    
+    public class AddMetadataAction extends AbstractAction {
+        
+        private static final long serialVersionUID = 414125917858160620L;
+
+        public AddMetadataAction() {
+            putValue(Action.NAME, "Add Metadata");
+            putValue(Action.SHORT_DESCRIPTION, "Add new metadata to the selected file");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            try {
+                TreeNode lastElement = getSelectedNode();
+                if (!(lastElement instanceof SelectableEntryNode)) return;
+                SelectableEntry entry = ((SelectableEntryNode)lastElement).getEntry();
+                
+                String msg = "Choose the new metadata's class";
+                String title = "Add Metadata";
+                Object[] options = creator.getKnownMetadataDisplayNames().toArray();
+                Object selection = JOptionPane.showInputDialog
+                (creator, msg, title, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                if (selection == null) return;
+                int index = creator.getKnownMetadataDisplayNames().indexOf(selection);
+                Class selectedClass = (Class)creator.getKnownMetadataClasses().get(index);
+                Constructor constructor = selectedClass.getConstructor(null);
+                Metadata metadata = (Metadata)constructor.newInstance(null);
+                
+                addMetadataAction(entry, metadata);
+            } catch (Exception e) {
+                Utility.showExceptionDialog(creator, e);
+            }
+        }
+        
+        public void addMetadataAction(SelectableEntry entry, Metadata newMetadata) {
+            ConversionRules rules = creator.getConversionRulesTask().getRules();
+            if (rules.getDatastreamTemplateCount() == 0) {
+                String msg = "There are currently no datastream templates.  You must add one.\n" +
+                "What is the nodeType for the new datastream template?";
+                String newDT = JOptionPane.showInputDialog(creator, msg);
+                if (newDT == null) return;
+                rules.addDatastreamTemplate(new ConversionRules.DatastreamTemplate(newDT));
+                creator.getConversionRulesTask().updateRules();
+            }
+            newMetadata.setType(rules.getDatastreamTemplate(0).getNodeType());
+            
+            for (int ctr = 0; ctr < entry.getMetadataCount(); ctr++) {
+                if (entry.getMetadata(ctr).getType().equals(newMetadata.getType())) {
+                    String msg = "There is already a node in the current entry with a\n" +
+                    "type of \"" + newMetadata.getType() + "\".  We recommend\n" +
+                    "each metadata type unique per entry.";
+                    JOptionPane.showMessageDialog(creator, msg);
+                    break;
+                }
+            }
+            
+            entry.addMetadata(newMetadata);
         }
         
     }
@@ -215,7 +314,12 @@ public class MetadataEntryTask extends JPanel implements Constants {
             int index = metadataView.getSelectedIndex();
             if (index < 0) return;
                 
-            ((SelectableEntryPanel)metadataView.getComponentAt(index)).updateMetadata();
+            Component c = metadataView.getComponentAt(index);
+            if (c instanceof SelectableEntryPanel) {
+                ((SelectableEntryPanel)c).updateMetadata();
+            } else if (c instanceof MetadataPanelWrapper) {
+                ((MetadataPanelWrapper)c).updateMetadata();
+            }
             metadataView.remove(index);
         }
             

@@ -162,15 +162,15 @@ public class FileSelectTask extends JPanel implements Constants {
                 if (x > bounds.x + fileSelectTreeRenderer.getCheckBoxWidth() - 2) return;
                 
                 SelectableEntryNode node = (SelectableEntryNode)path.getLastPathComponent();
-                boolean fullySelected = node.getEntry().getSelectionLevel() == FileSystemEntry.FULLY_SELECTED; 
-                int selectionLevel = fullySelected ? FileSystemEntry.UNSELECTED : FileSystemEntry.FULLY_SELECTED;
+                int previousBaseSelection = node.getEntry().getSelectionLevel(); 
+                boolean fullySelected = previousBaseSelection == SelectableEntry.FULLY_SELECTED; 
+                int selectionLevel = fullySelected ? SelectableEntry.UNSELECTED : SelectableEntry.FULLY_SELECTED;
                 node.getEntry().setSelectionLevel(selectionLevel, acceptor);
-                
-                SelectableEntryNode nodeParent = (SelectableEntryNode)node.getParent();
-                if (nodeParent != null) {
-                    nodeParent.getEntry().setSelectionLevelFromChildren(acceptor);
+
+                SelectableEntryNode parent = (SelectableEntryNode)node.getParent();
+                if (parent != null) {
+                    parent.getEntry().setSelectionLevelFromChildren(acceptor);
                 }
-                
                 fileSelectTreeModel.nodeChanged(node);
                 creator.getMetadataEntryTask().refreshTree();
             } catch (Exception e) {
