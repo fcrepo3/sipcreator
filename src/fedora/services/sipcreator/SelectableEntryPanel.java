@@ -5,7 +5,6 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -28,10 +27,12 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 4049918281383228216L;
 
+    private static final String ADD_METADATA_TEXT = "Add Metadata";
+    
+    private static final String REMOVE_METADATA_TEXT = "Remove Metadata";
+    
     
     private JTextField mimeTypeField = new JTextField(10);
-    
-    private JTextField entryLabelField = new JTextField(10);
     
     private JTextField entryIDField = new JTextField(10);
     
@@ -64,7 +65,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
     }
     
     private JComponent createNorthPanel() {
-        JPanel result = new JPanel(new GridLayout(3, 1, 5, 5));
+        JPanel result = new JPanel(new GridLayout(0, 1, 5, 5));
         Box tempP1;
         JButton button;
         
@@ -72,31 +73,26 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         
         tempP1 = Box.createHorizontalBox();
-        button = new JButton("Add Metadata");
+        button = new JButton(ADD_METADATA_TEXT);
         button.addActionListener(this);
         tempP1.add(button);
         
         tempP1.add(Box.createHorizontalStrut(5));
         
-        button = new JButton("Remove Metadata");
+        button = new JButton(REMOVE_METADATA_TEXT);
         button.addActionListener(this);
         tempP1.add(button);
-        
-        tempP1.add(Box.createHorizontalStrut(5));
-        
-        tempP1.add(Utility.addLabelLeft("ID: ", entryIDField));
         
         result.add(tempP1);
         
-        
         tempP1 = Box.createHorizontalBox();
         
-        tempP1.add(Utility.addLabelLeft("Mime Type: ", mimeTypeField));
+        tempP1.add(Utility.addLabelLeft("ID: ", entryIDField));
         
         tempP1.add(Box.createHorizontalStrut(5));
         
-        tempP1.add(Utility.addLabelLeft("Label: ", entryLabelField));
-
+        tempP1.add(Utility.addLabelLeft("Mime Type: ", mimeTypeField));
+        
         result.add(tempP1);
         
         HideablePanel hPanel = new HideablePanel(result, "Edit Metadata Options");
@@ -113,9 +109,9 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
         
         if (cmd == null) {
             return;
-        } else if (cmd.equals("Add Metadata")) {
+        } else if (cmd.equals(ADD_METADATA_TEXT)) {
             addMetadataAction();
-        } else if (cmd.equals("Remove Metadata")) {
+        } else if (cmd.equals(REMOVE_METADATA_TEXT)) {
             if (index == -1) return;
             removeMetadataAction(index);
         }
@@ -129,7 +125,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
             Constructor constructor = selectedClass.getConstructor(null);
             Metadata newMetadata = (Metadata)constructor.newInstance(null);
             
-            entry.getMetadata().add(newMetadata);
+            entry.addMetadata(newMetadata);
             MetadataPanelWrapper panel = new MetadataPanelWrapper(newMetadata.getPanel());
             metadataPane.addTab(newMetadata.getHint(), panel);
             metadataPane.setSelectedComponent(panel);
@@ -141,7 +137,7 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
     private void removeMetadataAction(int index) {
         MetadataPanelWrapper panel = (MetadataPanelWrapper)metadataPane.getComponentAt(index);
         metadataPane.remove(index);
-        entry.getMetadata().remove(panel.getMetadata());
+        entry.removeMetadata(panel.getMetadata());
     }
     
     
@@ -150,19 +146,16 @@ public class SelectableEntryPanel extends JPanel implements ActionListener {
             metadataPane.remove(0);
         }
         
-        Vector metadataList = entry.getMetadata();
         mimeTypeField.setText(entry.getMimeType());
-        entryLabelField.setText(entry.getLabel());
         
-        for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-            Metadata metadata = (Metadata)metadataList.get(ctr);
+        for (int ctr = 0; ctr < entry.getMetadataCount(); ctr++) {
+            Metadata metadata = entry.getMetadata(ctr);
             metadataPane.addTab(metadata.getHint(), new MetadataPanelWrapper(metadata.getPanel()));
         }
     }
     
     public void updateMetadata() {
         entry.setMimeType(mimeTypeField.getText());
-        entry.setLabel(entryLabelField.getText());
         for (int ctr = 0; ctr < metadataPane.getTabCount(); ctr++) {
             MetadataPanelWrapper mpw = (MetadataPanelWrapper)metadataPane.getComponentAt(ctr);
             mpw.updateMetadata();

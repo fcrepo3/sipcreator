@@ -16,8 +16,6 @@ public class FileSystemEntry extends SelectableEntry {
     
     private FileSystemEntry[] childrenEntries;
     
-    private FileSystemEntry parent;
-    
     private SIPCreator creator;
 
     
@@ -25,18 +23,15 @@ public class FileSystemEntry extends SelectableEntry {
         creator = newCreator;
         
         file = newFile;
-        try {
-            setMimeType(creator.getMimeTypeTool().getMimeType(file));
-        } catch (Exception me) {
-            setMimeType("");
-        }
+        try { setMimeType(creator.getMimeTypeTool().getMimeType(file)); }
+        catch (Exception me) {}
+        
         parent = newParent;
         if (!file.isDirectory()) {
             childrenFiles = new File[0];
         } else {
             childrenFiles = file.listFiles();
         }
-        label = getShortName();
         childrenEntries = new FileSystemEntry[childrenFiles.length];
         
         Arrays.sort(childrenFiles, fileNameComparator);
@@ -46,10 +41,6 @@ public class FileSystemEntry extends SelectableEntry {
         selectionLevel = parentSelected ? FULLY_SELECTED : UNSELECTED;
     }
     
-    
-    public SelectableEntry getParent() {
-        return parent;
-    }
     
     public File getFile() {
         return file;
@@ -83,33 +74,6 @@ public class FileSystemEntry extends SelectableEntry {
             } else {
                 child.setSelectionLevel(UNSELECTED, acceptor);
             }
-        }
-    }
-    
-    public void setSelectionLevelFromChildren(SIPEntryAcceptor acceptor) {
-        boolean unselected = false;
-        boolean selected = false;
-        boolean partially = false;
-        
-        for (int ctr = 0; ctr < getChildCount(acceptor); ctr++) {
-            FileSystemEntry entry = (FileSystemEntry)getChildAt(ctr, acceptor);
-            switch(entry.selectionLevel){
-            case FileSystemEntry.UNSELECTED: unselected = true; break; 
-            case FileSystemEntry.PARTIALLY_SELECTED: partially = true; break;
-            case FileSystemEntry.FULLY_SELECTED: selected = true; break;
-            }
-        }
-        
-        if (unselected && !partially && !selected) {
-            selectionLevel = SelectableEntry.UNSELECTED;
-        } else if (selected && !partially && !unselected) {
-            selectionLevel = SelectableEntry.FULLY_SELECTED;
-        } else {
-            selectionLevel = SelectableEntry.PARTIALLY_SELECTED;
-        }
-        
-        if (parent != null) {
-            parent.setSelectionLevelFromChildren(acceptor);
         }
     }
     

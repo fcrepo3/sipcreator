@@ -1,5 +1,7 @@
 package fedora.services.sipcreator;
 
+import java.awt.Color;
+
 import beowulf.gui.JGraph;
 import beowulf.gui.JNode;
 import beowulf.gui.JNodeFactory;
@@ -30,6 +32,8 @@ public class ConversionRulesJGraph extends JGraph {
             super(newEntry);
             entry = newEntry;
             setText(entry.getShortName());
+            setOpaque(true);
+            setBackground(Color.white);
         }
         
     }

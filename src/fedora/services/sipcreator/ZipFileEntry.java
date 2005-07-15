@@ -19,8 +19,6 @@ public class ZipFileEntry extends SelectableEntry {
     
     private boolean isDirectory;
     
-    private ZipFileEntry parent;
-    
     private Vector childList = new Vector();
     
     private Hashtable childTable = new Hashtable();
@@ -34,7 +32,6 @@ public class ZipFileEntry extends SelectableEntry {
         if (isDirectory) {
             name = name.substring(0, name.length() - 1);
         }
-        label = getShortName();
     }
     
     
@@ -52,10 +49,6 @@ public class ZipFileEntry extends SelectableEntry {
     }
     
     
-    public SelectableEntry getParent() {
-        return parent;
-    }
-
     public boolean isDirectory() {
         return isDirectory;
     }
@@ -86,33 +79,6 @@ public class ZipFileEntry extends SelectableEntry {
             } else {
                 child.setSelectionLevel(UNSELECTED, acceptor);
             }
-        }
-    }
-
-    public void setSelectionLevelFromChildren(SIPEntryAcceptor acceptor) {
-        boolean unselected = false;
-        boolean selected = false;
-        boolean partially = false;
-        
-        for (int ctr = 0; ctr < getChildCount(acceptor); ctr++) {
-            ZipFileEntry entry = (ZipFileEntry)getChildAt(ctr, acceptor);
-            switch(entry.selectionLevel){
-            case FileSystemEntry.UNSELECTED: unselected = true; break; 
-            case FileSystemEntry.PARTIALLY_SELECTED: partially = true; break;
-            case FileSystemEntry.FULLY_SELECTED: selected = true; break;
-            }
-        }
-        
-        if (unselected && !partially && !selected) {
-            selectionLevel = SelectableEntry.UNSELECTED;
-        } else if (selected && !partially && !unselected) {
-            selectionLevel = SelectableEntry.FULLY_SELECTED;
-        } else {
-            selectionLevel = SelectableEntry.PARTIALLY_SELECTED;
-        }
-        
-        if (parent != null) {
-            parent.setSelectionLevelFromChildren(acceptor);
         }
     }
 

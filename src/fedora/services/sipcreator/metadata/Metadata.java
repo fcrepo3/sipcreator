@@ -1,10 +1,12 @@
 package fedora.services.sipcreator.metadata;
 
+import java.util.Observable;
+
 import org.w3c.dom.Element;
 
 import fedora.services.sipcreator.Constants;
 
-public abstract class Metadata implements Constants {
+public abstract class Metadata extends Observable implements Constants {
 
     private static long lastID = 0;
 
@@ -55,10 +57,14 @@ public abstract class Metadata implements Constants {
     
     public void setLabel(String newLabel) {
         label = newLabel;
+        setChanged();
+        notifyObservers();
     }
     
     public void setType(String newType) {
         type = newType;
+        setChanged();
+        notifyObservers();
     }
     
     public abstract MetadataPanel getPanel();

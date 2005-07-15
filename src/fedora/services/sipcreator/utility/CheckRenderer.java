@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -13,24 +15,33 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.tree.TreeCellRenderer;
 
-import fedora.services.sipcreator.SelectableEntryNode;
+import fedora.services.sipcreator.Constants;
 import fedora.services.sipcreator.FileSystemEntry;
+import fedora.services.sipcreator.MetadataNode;
+import fedora.services.sipcreator.SelectableEntryNode;
 
-public class CheckRenderer extends JPanel implements TreeCellRenderer {
+public class CheckRenderer extends JPanel implements TreeCellRenderer, Constants {
     
     private static final long serialVersionUID = 3256722900836234808L;
 
+    private static final ImageIcon METADATA_ICON = new ImageIcon(IMAGE_DIR_NAME + "metadata.png");
+    
     private Border selectedBorder = BorderFactory.createLineBorder(UIManager.getColor("Tree.selectionBorderColor"));
     
     private Border unselectedBorder = BorderFactory.createEmptyBorder(1, 1, 1, 1);
     
-    private boolean checkBoxHidden = false;
+    private boolean checkShowing = true;
     
     private JCheckBox check = new JCheckBox();
     
     private JLabel label = new JLabel();
     
     public CheckRenderer() {
+        this(true);
+    }
+    
+    public CheckRenderer(boolean newCheckShowing) {
+        setCheckShowing(newCheckShowing);
         label.setOpaque(true);
         setLayout(new BorderLayout());
         add(check, BorderLayout.WEST);
@@ -43,7 +54,7 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer {
         String stringValue = tree.convertValueToText(value, isSelected, expanded, leaf, row, hasFocus);
         setEnabled(tree.isEnabled());
         
-        if (!checkBoxHidden && cNodeValue != null) {
+        if (checkShowing && cNodeValue != null) {
             check.setSelected(cNodeValue.getEntry().getSelectionLevel() != FileSystemEntry.UNSELECTED);
             check.setEnabled(cNodeValue.getEntry().getSelectionLevel() != FileSystemEntry.PARTIALLY_SELECTED);
             check.setForeground(UIManager.getColor("Tree.textForeground"));
@@ -66,24 +77,40 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer {
             revalidate();
         }
         label.setForeground(UIManager.getColor("Tree.textForeground"));
+
+        Icon icon;
+        if (value instanceof MetadataNode) {
+            icon = METADATA_ICON;
+        } else if (!cNodeValue.getEntry().isDirectory()) {
+            icon = UIManager.getIcon("Tree.leafIcon");
+        } else if (expanded) {
+            icon = UIManager.getIcon("Tree.openIcon");
+        } else {
+            icon = UIManager.getIcon("Tree.closedIcon");
+        }
         
         if (tree.isEnabled()) {
-            if (leaf) {
-                label.setIcon(UIManager.getIcon("Tree.leafIcon"));
-            } else if (expanded) {
-                label.setIcon(UIManager.getIcon("Tree.openIcon"));
-            } else {
-                label.setIcon(UIManager.getIcon("Tree.closedIcon"));
-            }
+            label.setIcon(icon);
         } else {
-            if (leaf) {
-                label.setDisabledIcon(UIManager.getIcon("Tree.leafIcon"));
-            } else if (expanded) {
-                label.setDisabledIcon(UIManager.getIcon("Tree.openIcon"));
-            } else {
-                label.setDisabledIcon(UIManager.getIcon("Tree.closedIcon"));
-            }
+            label.setDisabledIcon(icon);
         }
+//        if (tree.isEnabled()) {
+//            if (leaf) {
+//                label.setIcon(UIManager.getIcon("Tree.leafIcon"));
+//            } else if (expanded) {
+//                label.setIcon(UIManager.getIcon("Tree.openIcon"));
+//            } else {
+//                label.setIcon(UIManager.getIcon("Tree.closedIcon"));
+//            }
+//        } else {
+//            if (leaf) {
+//                label.setDisabledIcon(UIManager.getIcon("Tree.leafIcon"));
+//            } else if (expanded) {
+//                label.setDisabledIcon(UIManager.getIcon("Tree.openIcon"));
+//            } else {
+//                label.setDisabledIcon(UIManager.getIcon("Tree.closedIcon"));
+//            }
+//        }
         
         setComponentOrientation(tree.getComponentOrientation());
         label.setComponentOrientation(tree.getComponentOrientation());
@@ -98,12 +125,12 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer {
         super.setBackground(color);
     }
 
-    public boolean isCheckBoxHidden() {
-        return checkBoxHidden;
+    public boolean isCheckShowing() {
+        return checkShowing;
     }
 
-    public void setCheckBoxHidden(boolean newCheckBoxHidden) {
-        checkBoxHidden = newCheckBoxHidden;
+    public void setCheckShowing(boolean newCheckShowing) {
+        checkShowing = newCheckShowing;
     }
     
     public int getCheckBoxWidth() {

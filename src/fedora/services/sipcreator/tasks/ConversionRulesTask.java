@@ -446,7 +446,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 Object selected = templateListDisplay.getSelectedValue();
                 ((DatastreamTemplate)selected).setDescription(templateDescriptionArea.getText());
             }
-            System.out.println(rules);
         }
         
         
@@ -481,8 +480,6 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
             } else if (cmd.equals(DEL_ATTRIBUTE_TEXT)) {
                 deleteAttribute();
             }
-            
-            System.out.println(rules);
         }
         
         private void addNamespace() {

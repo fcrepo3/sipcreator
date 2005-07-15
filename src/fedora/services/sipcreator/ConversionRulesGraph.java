@@ -105,8 +105,8 @@ public class ConversionRulesGraph implements GraphModel {
             }
         }
         
-        for (int ctr1 = 0; ctr1 < source.getMetadata().size(); ctr1++) {
-            sourceMetadata = (Metadata)source.getMetadata().get(ctr1);
+        for (int ctr1 = 0; ctr1 < source.getMetadataCount(); ctr1++) {
+            sourceMetadata = source.getMetadata(ctr1);
             sourceOT = rules.getObjectTemplate(sourceMetadata.getType());
             if (sourceOT == null) continue;
             
@@ -138,8 +138,8 @@ public class ConversionRulesGraph implements GraphModel {
                 }
             }
             
-            for (int ctr2 = 0; ctr2 < entry.getMetadata().size(); ctr2++) {
-                Metadata parentMetadata = (Metadata)entry.getMetadata().get(ctr2);
+            for (int ctr2 = 0; ctr2 < entry.getMetadataCount(); ctr2++) {
+                Metadata parentMetadata = entry.getMetadata(ctr2);
                 if (parentMetadata.getType().equals(relationship.getTargetNodeType(ctr1))) {
                     return true;
                 }

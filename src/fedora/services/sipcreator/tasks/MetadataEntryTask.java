@@ -10,7 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -48,6 +47,7 @@ import fedora.services.sipcreator.acceptor.FilterAcceptor;
 import fedora.services.sipcreator.acceptor.IntersectionAcceptor;
 import fedora.services.sipcreator.acceptor.SelectionAcceptor;
 import fedora.services.sipcreator.metadata.Metadata;
+import fedora.services.sipcreator.utility.CheckRenderer;
 
 public class MetadataEntryTask extends JPanel implements Constants {
 
@@ -76,10 +76,12 @@ public class MetadataEntryTask extends JPanel implements Constants {
         
         acceptor.getAcceptorList().add(filterAcceptor);
         acceptor.getAcceptorList().add(new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED));
+        acceptor.setAcceptsMetadata(true);
         
         metadataTreeDisplay.addMouseListener(eventHandler);
         metadataTreeDisplay.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         metadataTreeDisplay.addMouseListener(new PopupListener(createPopupMenu()));
+        metadataTreeDisplay.setCellRenderer(new CheckRenderer(false));
         
         filterField.addActionListener(filterAction);
         
@@ -126,7 +128,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
     
     
     public void updateTree(SelectableEntry newRoot) {
-        metadataTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
+        metadataTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor, metadataTreeModel));
     }
     
     public void refreshTree() {
@@ -214,7 +216,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
             if (index < 0) return;
                 
             ((SelectableEntryPanel)metadataView.getComponentAt(index)).updateMetadata();
-            remove(index);
+            metadataView.remove(index);
         }
             
     }
@@ -383,10 +385,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
             buffer.append("\"/>");
             buffer.append("</METS:file>");
             
-            Vector metadataList = entry.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
-                
+            for (int ctr = 0; ctr < entry.getMetadataCount(); ctr++) {
+                Metadata metadata = entry.getMetadata(ctr);
                 buffer.append("<METS:file ID=\"");
                 buffer.append(StreamUtility.enc(metadata.getID()));
                 buffer.append("\" MIMETYPE=\"text/xml\">");
@@ -410,9 +410,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
             buffer.append("\"/>");
             buffer.append("</METS:div>");
             
-            Vector metadataList = entry.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
+            for (int ctr = 0; ctr < entry.getMetadataCount(); ctr++) {
+                Metadata metadata = entry.getMetadata(ctr);
                 
                 buffer.append("<METS:div LABEL=\"");
                 buffer.append(StreamUtility.enc(metadata.getLabel()));
@@ -431,11 +430,10 @@ public class MetadataEntryTask extends JPanel implements Constants {
         }
         
         private void handleDirectoryData(StringBuffer buffer, SelectableEntry entry) {
-            Vector metadataList = entry.getMetadata();
-            if (metadataList.size() == 0) return;
+            if (entry.getMetadataCount() == 0) return;
             
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
+            for (int ctr = 0; ctr < entry.getMetadataCount(); ctr++) {
+                Metadata metadata = entry.getMetadata(ctr);
                 
                 buffer.append("<METS:file ID=\"");
                 buffer.append(StreamUtility.enc(metadata.getID()));
@@ -456,9 +454,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
             buffer.append("folder");
             buffer.append("\">");
             
-            Vector metadataList = entry.getMetadata();
-            for (int ctr = 0; ctr < metadataList.size(); ctr++) {
-                Metadata metadata = (Metadata)metadataList.get(ctr);
+            for (int ctr = 0; ctr < entry.getMetadataCount(); ctr++) {
+                Metadata metadata = entry.getMetadata(ctr);
                 
                 buffer.append("<METS:div LABEL=\"");
                 buffer.append(StreamUtility.enc(metadata.getLabel()));

@@ -94,7 +94,7 @@ public class FileSelectTask extends JPanel implements Constants {
         if (newRoot == null) {
             fileSelectTreeModel.setRoot(null);
         } else {
-            fileSelectTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor));
+            fileSelectTreeModel.setRoot(new SelectableEntryNode(newRoot, null, acceptor, fileSelectTreeModel));
         }
     }
     
@@ -364,8 +364,6 @@ public class FileSelectTask extends JPanel implements Constants {
         }
         
         private void traverseStructMap(ZipFileEntry currentEntry, Element currentDiv, Hashtable mdTable) {
-            currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
-            
             NodeList childList = currentDiv.getChildNodes();
             for (int ctr = 0; ctr < childList.getLength(); ctr++) {
                 try {
@@ -384,8 +382,7 @@ public class FileSelectTask extends JPanel implements Constants {
                         metadata.setLabel(currentNode.getAttribute("LABEL"));
                         metadata.setType(currentNode.getAttribute("TYPE"));
                         
-                        currentEntry.getMetadata().add(metadata);
-                        currentEntry.setLabel(currentDiv.getAttribute("LABEL"));
+                        currentEntry.addMetadata(metadata);
                     } else {
                         String name = currentNode.getAttribute("LABEL");
                         traverseStructMap(currentEntry.getChild(name), currentNode, mdTable);
