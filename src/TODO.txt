@@ -51,7 +51,7 @@ D      * Integrate
 D      * Evaluate usefulness
 De   * Tool linked from Sandy
    * Integrate JHove
-   * Do a more intelligent model update, than "structure changed" on root...
+De * Do a more intelligent model update, than "structure changed" on root...
 De * Save file's metadata beyond directory switching?
 D    * At least show a warning dialog when switching directories
 D  * Close all metadata tabs when switching
@@ -105,7 +105,7 @@ D  * Develop generic metadata API so that new formats can be "dropped in"
    * Allow for a way to check relationships of two nodes
 D  * Allow for a way to save new CRules.xml
 D  * Check to make sure ConversionRulesTask never actually *changes* its conversionRules object
-   * Warn if there is more than one DatastreamTemplate of any type per Entry
+D  * Warn if there is more than one DatastreamTemplate of any type per Entry
 D  * Use a map to go from nodeType to DTs, OTs, and from alias to Namespaces
    * Allow for visualization of graph
 D    * Allow for visualization of all relationships
@@ -127,6 +127,9 @@ D  * Import it
 D  * Slightly confusing/inaccurate way of representing primitiveRels     
 
    General GUI:
+D  * Place Metadata elements as actual nodes in the tree
+D    * Alter SelectableEntryPanel accordingly
+D    * Create a new MetadataPanel class
 D  * Make GUI pretty
 D    * Use icons rather than text
 D    * Get some decent icons

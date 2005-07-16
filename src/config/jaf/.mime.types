@@ -1,0 +1,63 @@
+#
+# A simple, old format, mime.types file
+#
+application/java-archive	jar
+application/msaccess		mdb
+application/mxexcel		xls xla xlt xlw
+application/mspowerpoint	pot ppt pps
+application/msword		doc word
+application/mswrite		wri
+application/pdf			pdf
+application/postscript		ai eps ps
+application/rtf			rtf
+application/x-dvi		dvi
+application/x-gzip		gz gzip
+application/x-javascript	js
+application/x-java		class
+application/x-java-jnlp		jnlp
+application/x-shockwave-flash	swf
+application/x-tex		tex
+
+application/x-texinfo		texinfo texi
+application/x-troff		t tr roff
+application/x-winhelp		hlp
+application/zip			zip
+
+audio/basic			au
+ snd
+audio/midi			midi mid
+
+audio/x-aiff			aifc aif aiff
+audio/x-mpeg			mp3
+audio/x-pn-realaudio		ra ram
+audio/x-pn-realaudio-plugin	rpm
+audio/x-wav            		wav
+image/bmp			bmp
+image/gif			gif
+
+image/ief			ief
+image/jpeg			jpeg jpg jpe
+image/pict			pict
+image/png			png
+image/tiff			tiff tif
+image/targa			tga
+image/x-portable-anymap		pnm
+image/x-portable-bitmap		pbm
+image/x-portable-graymap	pgm
+image/x-portably-pixmap		ppm
+image/x-rgb			rgb
+image/x-xbitmap			xbm
+image/x-xpixmap			xpm
+image/x-xwindowdump		xwd
+text/css			css
+text/comma-separated-values	csv
+text/html			html htm
+text/plain			txt text
+ c cc cpp h hh hpp java
+text/rtf			rtf rtx
+text/tab-separated-values	tsv
+text/xml			xml
+video/mpeg			mpeg mpg mpe
+video/msvideo			avi
+video/quicktime			qt mov
+

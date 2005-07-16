@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conversionRules>
+
+  <description>Conversion rules appropriate for use with sample three.zip</description>
+  
+  <!--                                          -->
+  <!-- Namespace declarations for relationships -->
+  <!--                                          -->
+
+  <namespace alias="sample" uri="http://example.org/example#"/>
+
+  <!--                      -->
+  <!-- Datastream templates -->
+  <!--                      -->
+
+  <datastreamTemplate nodeType="dc"> 
+    <description>Specifies a datastream ID of "DC" for datastream divs with TYPE="dc" in the METS StructMap.</description>
+    <attribute name="id" value="DC"/>
+  </datastreamTemplate>
+  
+  <datastreamTemplate nodeType="content"> 
+    <description>Specifies a datastream ID of "content" for datastream divs with TYPE="content" in the METS StructMap.</description>
+    <attribute name="id" value="content"/>
+  </datastreamTemplate>
+  
+  <datastreamTemplate nodeType="license"> 
+    <description>Specifies a datastream ID of "license.rdf" for datastream divs with TYPE="LICENSE" in the METS StructMap.</description>
+    <attribute name="id" value="license.rdf"/>
+  </datastreamTemplate>
+  
+  <!--                  -->
+  <!-- Object templates -->
+  <!--                  -->
+  
+  <objectTemplate nodeType="*">
+    <description>Describes all relationships</description>
+    <relationship name="child">
+      <target primitiveRel="tree:child" nodeType="*"/>
+    </relationship>
+    <relationship name="parent">
+      <target primitiveRel="tree:parent" nodeType="*"/>
+    </relationship>
+    <relationship name="ancestor">
+      <target primitiveRel="tree:ancestor" nodeType="*"/>
+    </relationship>
+    <relationship name="descendant">
+      <target primitiveRel="tree:descendant" nodeType="*"/>
+    </relationship>
+  </objectTemplate>
+
+</conversionRules>
