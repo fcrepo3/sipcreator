@@ -1,11 +1,9 @@
 package fedora.services.sipcreator.mimetype;
 
 import java.io.File;
-import java.io.IOException;
 
 import javax.activation.MimetypesFileTypeMap;
 
-import beowulf.gui.Utility;
 import fedora.services.sipcreator.SIPCreator;
 
 public class JAFDetector extends MimetypeDetector {
@@ -18,11 +16,7 @@ public class JAFDetector extends MimetypeDetector {
         String prop = "sipcreator.mimetype.jaf.config";
         String filename = creator.getProperties().getProperty(prop);
         
-        try {
-            mimetypesFileTypeMap = new MimetypesFileTypeMap(filename);
-        } catch (IOException ioe) {
-            Utility.showExceptionDialog(creator, ioe, "JAF Failed Initialization");
-        }
+        mimetypesFileTypeMap = new MimetypesFileTypeMap(creator.getInputStream(filename));
     }
     
     public String getMimeType(File file) {

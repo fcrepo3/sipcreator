@@ -11,11 +11,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -25,9 +25,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
@@ -39,11 +39,8 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import beowulf.gui.HideablePanel;
 import beowulf.gui.JGraph;
-import beowulf.gui.ScrollingPanel;
 import beowulf.gui.SemiEditableTableModel;
 import beowulf.gui.Utility;
 import fedora.services.sipcreator.Constants;
@@ -66,10 +63,10 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     private UpdateListener updater = new UpdateListener();
     
-    private LoadConversionRulesAction loadConversionRulesAction = new LoadConversionRulesAction();
-    private LoadConversionRulesWebAction loadConversionRulesWebAction = new LoadConversionRulesWebAction();
-    private SaveConversionRulesAction saveConversionRulesAction = new SaveConversionRulesAction();
-    private GenerateGraphAction generateGraphAction = new GenerateGraphAction();
+    private LoadConversionRulesAction loadConversionRulesAction;
+    private LoadConversionRulesWebAction loadConversionRulesWebAction;
+    private SaveConversionRulesAction saveConversionRulesAction;
+    private GenerateGraphAction generateGraphAction;
     
     private ConversionRulesJGraph graphView = new ConversionRulesJGraph();
     
@@ -99,6 +96,11 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     
     public ConversionRulesTask(SIPCreator newCreator) {
         creator = newCreator;
+        
+        loadConversionRulesAction = new LoadConversionRulesAction();
+        loadConversionRulesWebAction = new LoadConversionRulesWebAction();
+        saveConversionRulesAction = new SaveConversionRulesAction();
+        generateGraphAction = new GenerateGraphAction();
         
         //Minimum sizes are explicitly set so that labels with long text entries
         //will not keep the containing JSplitPane from resizing down past the point
@@ -185,38 +187,13 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
     }
     
     private JComponent createCenterPanel() {
-        HideablePanel tempP2;
-        Box tempP1 = Box.createVerticalBox();
-        
-        tempP2 = new HideablePanel(createScrollPane(descriptionArea));
-        tempP2.setTitle("Description");
-        tempP1.add(tempP2); tempP1.add(Box.createVerticalStrut(5));
-        
-        tempP2 = new HideablePanel(getNamespaceComponent());
-        tempP2.setTitle("Namespaces");
-        tempP1.add(tempP2); tempP1.add(Box.createVerticalStrut(5));
+        JTabbedPane result = new JTabbedPane();
 
-        tempP2 = new HideablePanel(getObjectComponent());
-        tempP2.setTitle("Templates");
-        tempP1.add(tempP2);
+        result.addTab("Description", new JScrollPane(descriptionArea));
+        result.addTab("Namespaces", getNamespaceComponent());
+        result.addTab("Templates", getObjectComponent());
         
-        ScrollingPanel scrollingPanel = new ScrollingPanel(new BorderLayout());
-        scrollingPanel.add(tempP1, BorderLayout.CENTER);
-        JScrollPane scrollPane = new JScrollPane(scrollingPanel);
-        //Remove the standard etched border on the ScrollPane
-        scrollPane.setBorder(null);
-
-        //This code creates a left border of 5 pixels on the VSB.  By putting the border on the
-        //left of the vertical scrollbar, rather than the right of the scrolling panel, we ensure
-        //that this border will only appear when the scrollbar appears.  If this were not the case
-        //then the scrolling panel would span 5 fewer pixels than it should when the VSB was
-        //not visible
-        JScrollBar vsb = scrollPane.getVerticalScrollBar();
-        Dimension vsbPrefSize = vsb.getPreferredSize();
-        vsb.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
-        vsb.setPreferredSize(new Dimension(vsbPrefSize.width + 5, vsbPrefSize.height));
-        
-        return scrollPane;
+        return result;
     }
     
     private JComponent getNamespaceComponent() {
@@ -540,13 +517,15 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         
         private static final long serialVersionUID = 3690752916960983351L;
 
-        public LoadConversionRulesAction() {
+        private LoadConversionRulesAction() {
             //putValue(Action.NAME, "Load CRules");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-folder.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-folder.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Load in a conversion rules file");
         }
         
         public void actionPerformed(ActionEvent ae) {
+            System.out.println(creator.getCodeBase());
             try {
                 JFileChooser fileChooser = creator.getFileChooser();
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -555,27 +534,24 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 int choice = fileChooser.showOpenDialog(creator);
                 if (choice != JFileChooser.APPROVE_OPTION) return;
             
-                openFile(fileChooser.getSelectedFile());
+                InputSource is = new InputSource(new FileInputStream(fileChooser.getSelectedFile()));
+                ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(is));
+                updateRules(fileChooser.getSelectedFile().getCanonicalPath(), crules);
             } catch (Exception e) {
                 Utility.showExceptionDialog(creator, e);
             }
         }
 
-        public void openFile(File file) throws IOException, SAXException {
-            InputSource is = new InputSource(new FileInputStream(file));
-            ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(is));
-            updateRules(file.getCanonicalPath(), crules);
-        }
-        
     }
     
     public class LoadConversionRulesWebAction extends AbstractAction {
         
         private static final long serialVersionUID = -332126288068464408L;
 
-        public LoadConversionRulesWebAction() {
+        private LoadConversionRulesWebAction() {
             //putValue(Action.NAME, "Load CRules Web");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gftp.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gftp.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Load in a conversion rules file from the web");
         }
         
@@ -585,15 +561,11 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 String urlString = JOptionPane.showInputDialog(creator, message);
                 if (urlString == null || urlString.length() == 0) return;
 
-                openURL(urlString);
+                ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(urlString));
+                updateRules(urlString, crules);
             } catch (Exception e) {
                 Utility.showExceptionDialog(creator, e);
             }
-        }
-        
-        public void openURL(String url) throws IOException, SAXException {
-            ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(url));
-            updateRules(url, crules);
         }
         
     }
@@ -602,9 +574,10 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
         
         private static final long serialVersionUID = 2024410009193247878L;
 
-        public SaveConversionRulesAction() {
+        private SaveConversionRulesAction() {
             //putValue(Action.NAME, "Save CRules");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-dev-floppy.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-dev-floppy.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Save the conversion rules to a file");
         }
         
@@ -641,7 +614,8 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         private GenerateGraphAction() {
             //putValue(Action.NAME, "Generate Graph");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "stock_reload.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "stock_reload.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Generate a graph based on the current rules and tree");
         }
         

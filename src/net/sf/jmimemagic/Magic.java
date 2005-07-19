@@ -22,7 +22,9 @@
 package net.sf.jmimemagic;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -40,18 +42,21 @@ public class Magic {
 
     private MagicParser magicParser = null;
 
-    private String magicFile;
-    
     /**
      * constructor
      */
-    public Magic(String newMagicFile) throws MagicParseException {
-        magicFile = newMagicFile;
+    public Magic(String newMagicFile) throws MagicParseException, FileNotFoundException {
         log = Logger.getLogger("net.sf.jmimemagic");
         log.debug("Magic: instantiated");
-        magicParser = new MagicParser(magicFile);
+        magicParser = new MagicParser(newMagicFile);
     }
 
+    public Magic(InputStream stream) throws MagicParseException {
+        log = Logger.getLogger("net.sf.jmimemagic");
+        log.debug("Magic: instantiated");
+        magicParser = new MagicParser(stream);
+    }
+    
     /**
      * return the parsed MagicMatch objects that were created from the magic.xml
      * definitions

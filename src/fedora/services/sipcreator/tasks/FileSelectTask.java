@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
@@ -58,12 +59,12 @@ public class FileSelectTask extends JPanel implements Constants {
     
     private UniversalAcceptor acceptor = new UniversalAcceptor();
     
-    private OpenFolderAction openFolderAction = new OpenFolderAction();
-    private OpenZipFileAction openZipFileAction = new OpenZipFileAction();
+    private OpenFolderAction openFolderAction;
+    private OpenZipFileAction openZipFileAction;
     private EventHandler eventHandler = new EventHandler();
     
     //Data structures and UI components involved with the file browsing task
-    private CheckRenderer fileSelectTreeRenderer = new CheckRenderer();
+    private CheckRenderer fileSelectTreeRenderer;
     private DefaultTreeModel fileSelectTreeModel = new DefaultTreeModel(null);
     private JTree fileSelectTreeDisplay = new JTree(fileSelectTreeModel);
     
@@ -71,6 +72,11 @@ public class FileSelectTask extends JPanel implements Constants {
     
     public FileSelectTask(SIPCreator newCreator) {
         creator = newCreator;
+        
+        fileSelectTreeRenderer = new CheckRenderer(creator);
+        
+        openFolderAction = new OpenFolderAction();
+        openZipFileAction = new OpenZipFileAction();
         
         fileSelectTreeDisplay.setCellRenderer(fileSelectTreeRenderer);
         fileSelectTreeDisplay.addMouseListener(eventHandler);
@@ -184,9 +190,10 @@ public class FileSelectTask extends JPanel implements Constants {
 
         private static final long serialVersionUID = 3763096349595678519L;
         
-        public OpenFolderAction() {
+        private OpenFolderAction() {
             //putValue(Action.NAME, "Open File");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-folder.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-folder.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory file");
         }
         
@@ -250,9 +257,10 @@ public class FileSelectTask extends JPanel implements Constants {
         
         private static final long serialVersionUID = 3937836713440462314L;
 
-        public OpenZipFileAction() {
+        private OpenZipFileAction() {
             //putValue(Action.NAME, "Open ZIP");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-mime-application-zip.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-mime-application-zip.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Open a previously saved SIP file");
         }
         

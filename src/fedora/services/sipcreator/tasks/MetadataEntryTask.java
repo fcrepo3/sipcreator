@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
+import java.net.URL;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -31,6 +32,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -59,10 +62,10 @@ public class MetadataEntryTask extends JPanel implements Constants {
 
     private static final long serialVersionUID = 3257850999698698808L;
     
-    private FilterAction filterAction = new FilterAction();
-    private AddMetadataAction addMetadataAction = new AddMetadataAction();
-    private SaveSIPAction saveSIPAction = new SaveSIPAction();
-    private CloseCurrentTabAction closeCurrentTabAction = new CloseCurrentTabAction();
+    private FilterAction filterAction;
+    private AddMetadataAction addMetadataAction;
+    private SaveSIPAction saveSIPAction;
+    private CloseCurrentTabAction closeCurrentTabAction;
     private EventHandler eventHandler = new EventHandler();
     
     private FilterAcceptor filterAcceptor = new FilterAcceptor();
@@ -72,7 +75,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
     private DefaultTreeModel metadataTreeModel = new DefaultTreeModel(null);
     private JTree metadataTreeDisplay = new JTree(metadataTreeModel);
 
-    private JCheckBox filterEnabledBox = new JCheckBox(filterAction);
+    private JCheckBox filterEnabledBox;
     private JTextField filterField = new JTextField();
     private JTabbedPane metadataView = new JTabbedPane();
     
@@ -81,6 +84,11 @@ public class MetadataEntryTask extends JPanel implements Constants {
     public MetadataEntryTask(SIPCreator newCreator) {
         creator = newCreator;
         
+        filterAction = new FilterAction();
+        addMetadataAction = new AddMetadataAction();
+        saveSIPAction = new SaveSIPAction();
+        closeCurrentTabAction = new CloseCurrentTabAction();
+        
         acceptor.getAcceptorList().add(filterAcceptor);
         acceptor.getAcceptorList().add(new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED));
         acceptor.setAcceptsMetadata(true);
@@ -88,9 +96,10 @@ public class MetadataEntryTask extends JPanel implements Constants {
         metadataTreeDisplay.addMouseListener(eventHandler);
         metadataTreeDisplay.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         metadataTreeDisplay.addMouseListener(new PopupListener(createPopupMenu()));
-        metadataTreeDisplay.setCellRenderer(new CheckRenderer(false));
+        metadataTreeDisplay.setCellRenderer(new CheckRenderer(false, creator));
         
-        filterField.addActionListener(filterAction);
+        filterEnabledBox = new JCheckBox(filterAction);
+        filterField.getDocument().addDocumentListener(filterAction);
         
         JSplitPane centerPane = new JSplitPane();
         centerPane.setLeftComponent(createLeftPanel());
@@ -302,7 +311,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
 
         private CloseCurrentTabAction() {
             //putValue(Action.NAME, "Close Tab");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "stock_close.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "stock_close.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Closes the current tab");
         }
             
@@ -325,7 +335,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
             
     }
 
-    public class FilterAction extends AbstractAction {
+    public class FilterAction extends AbstractAction implements DocumentListener {
         
         private static final long serialVersionUID = 3256441395794162737L;
 
@@ -347,6 +357,27 @@ public class MetadataEntryTask extends JPanel implements Constants {
             
             refreshTree();
         }
+
+        public void changedUpdate(DocumentEvent e) {
+            if (!filterEnabledBox.isSelected()) {
+                return;
+            }
+            actionPerformed(null);
+        }
+
+        public void insertUpdate(DocumentEvent e) {
+            if (!filterEnabledBox.isSelected()) {
+                return;
+            }
+            actionPerformed(null);
+        }
+
+        public void removeUpdate(DocumentEvent e) {
+            if (!filterEnabledBox.isSelected()) {
+                return;
+            }
+            actionPerformed(null);
+        }
         
     }
     
@@ -366,7 +397,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
         
         private SaveSIPAction() {
             //putValue(Action.NAME, "Save SIP");
-            putValue(Action.SMALL_ICON, new ImageIcon(IMAGE_DIR_NAME + "gnome-dev-floppy.png"));
+            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-dev-floppy.png");
+            putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Save the current files and metadata as a SIP file");
         }
         

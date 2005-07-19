@@ -2,6 +2,7 @@ package fedora.services.sipcreator.utility;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.net.URL;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -18,13 +19,14 @@ import javax.swing.tree.TreeCellRenderer;
 import fedora.services.sipcreator.Constants;
 import fedora.services.sipcreator.FileSystemEntry;
 import fedora.services.sipcreator.MetadataNode;
+import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntryNode;
 
 public class CheckRenderer extends JPanel implements TreeCellRenderer, Constants {
     
     private static final long serialVersionUID = 3256722900836234808L;
 
-    private static final ImageIcon METADATA_ICON = new ImageIcon(IMAGE_DIR_NAME + "metadata.png");
+    private ImageIcon metadataIcon;
     
     private Border selectedBorder = BorderFactory.createLineBorder(UIManager.getColor("Tree.selectionBorderColor"));
     
@@ -36,11 +38,13 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer, Constants
     
     private JLabel label = new JLabel();
     
-    public CheckRenderer() {
-        this(true);
+    public CheckRenderer(SIPCreator creator) {
+        this(true, creator);
     }
     
-    public CheckRenderer(boolean newCheckShowing) {
+    public CheckRenderer(boolean newCheckShowing, SIPCreator creator) {
+        URL imgURL = creator.getURL(IMAGE_DIR_NAME + "metadata.png");
+        metadataIcon = new ImageIcon(creator.getImage(imgURL));
         setCheckShowing(newCheckShowing);
         label.setOpaque(true);
         setLayout(new BorderLayout());
@@ -80,7 +84,7 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer, Constants
 
         Icon icon;
         if (value instanceof MetadataNode) {
-            icon = METADATA_ICON;
+            icon = metadataIcon;
         } else if (!cNodeValue.getEntry().isDirectory()) {
             icon = UIManager.getIcon("Tree.leafIcon");
         } else if (expanded) {

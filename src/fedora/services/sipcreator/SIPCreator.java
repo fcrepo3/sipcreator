@@ -3,11 +3,12 @@ package fedora.services.sipcreator;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -22,6 +23,8 @@ import javax.swing.filechooser.FileFilter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.InputSource;
 
 import beowulf.gui.Utility;
 import beowulf.util.ExtensionFileFilter;
@@ -42,7 +45,7 @@ public class SIPCreator extends JApplet implements Constants {
     private DocumentBuilder documentBuilder;
 
     //Tool for file selection
-    private JFileChooser fileChooser = new JFileChooser(".");
+    private JFileChooser fileChooser = new JFileChooser(System.getProperty("user.home"));
     private FileFilter xmlFilter = new ExtensionFileFilter("xml");
     private FileFilter zipFilter = new ExtensionFileFilter("zip");
     
@@ -62,17 +65,21 @@ public class SIPCreator extends JApplet implements Constants {
     
     //Task elements, these are larger classes that encapsulate everything necessary
     //for the end user to perform a certain task.
-    private ConversionRulesTask conversionRulesTask = new ConversionRulesTask(this);
-    private MetadataEntryTask metadataEntryTask = new MetadataEntryTask(this);
-    private FileSelectTask fileSelectTask = new FileSelectTask(this);
+    private ConversionRulesTask conversionRulesTask;
+    private MetadataEntryTask metadataEntryTask;
+    private FileSelectTask fileSelectTask;
     
     
     public void init() {
         try {
-            sipCreatorProperties.load(new FileInputStream(CONFIG_FILE_NAME));
+            sipCreatorProperties.load(getInputStream(CONFIG_FILE_NAME));
         } catch (IOException ioe) {
             Utility.showExceptionDialog(this, ioe, "Properties not loaded");
         }
+        
+        conversionRulesTask = new ConversionRulesTask(this);
+        metadataEntryTask = new MetadataEntryTask(this);
+        fileSelectTask = new FileSelectTask(this);
         
         //Instantiate the XML Parser
         try {
@@ -154,14 +161,17 @@ public class SIPCreator extends JApplet implements Constants {
     
     private void loadDefaultConversionRules(String value) throws Exception {
         try {
-            conversionRulesTask.getLoadConversionRulesWebAction().openURL(value);
+            ConversionRules crules = new ConversionRules(documentBuilder.parse(getURL(value).toString()));
+            conversionRulesTask.updateRules(value, crules);
         } catch (Exception mue) {
-            conversionRulesTask.getLoadConversionRulesAction().openFile(new File(value));
+            InputSource is = new InputSource(getInputStream(value));
+            ConversionRules crules = new ConversionRules(documentBuilder.parse(is));
+            conversionRulesTask.updateRules(value, crules);
         }
     }
     
-    private void loadDefaultMetadataClasses(String value) throws Exception {
-        BufferedReader br = new BufferedReader(new FileReader(value));
+    private void loadDefaultMetadataClasses(String value) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(getInputStream(value)));
         while (br.ready()) {
             try {
                 String displayName = br.readLine();
@@ -192,6 +202,24 @@ public class SIPCreator extends JApplet implements Constants {
         (new Object[]{this});
     }
     
+    
+    public InputStream getInputStream(String filename) {
+        try {
+            return (new URL(getCodeBase(), filename)).openStream();
+        } catch (IOException ioe) {
+            System.err.println("IOException in SIPCreator#getInputStream: " + ioe.getMessage());
+            return null;
+        }
+    }
+    
+    public URL getURL(String filename) {
+        try {
+            return new URL(getCodeBase(), filename);
+        } catch (MalformedURLException mue) {
+            System.err.println("MalformedURLException in SIPCreator#getURL: " + mue.getMessage());
+            return null;
+        }
+    }
     
     public Properties getProperties() {
         return sipCreatorProperties;

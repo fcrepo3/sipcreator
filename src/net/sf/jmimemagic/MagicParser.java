@@ -1,8 +1,9 @@
 package net.sf.jmimemagic;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.net.URL;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -55,8 +57,6 @@ public class MagicParser extends DefaultHandler implements ContentHandler, Error
 
     private boolean initialized = false;
 
-    private String magicFile;
-    
     private XMLReader parser;
 
     private ArrayList stack = new ArrayList();
@@ -79,11 +79,14 @@ public class MagicParser extends DefaultHandler implements ContentHandler, Error
 
     private boolean isTest = false;
 
+    public MagicParser(String newMagicFile) throws MagicParseException, FileNotFoundException {
+        this(new FileInputStream(newMagicFile));
+    }
+    
     /**
      * constructor
      */
-    public MagicParser(String newMagicFile) throws MagicParseException {
-        magicFile = newMagicFile;
+    public MagicParser(InputStream stream) throws MagicParseException {
         log = Logger.getLogger("net.sf.jmimemagic");
         log.debug("MagicParser: instantiated");
         
@@ -135,16 +138,7 @@ public class MagicParser extends DefaultHandler implements ContentHandler, Error
 
             // parse file
             try {
-                // get the magic file URL
-                URL magicURL = MagicParser.class.getResource(magicFile);
-                String magicURLString = magicURL != null ? magicURL.toString() :
-                    "file:///" + new File(magicFile).getAbsolutePath();
-                if (magicURLString == null) {
-                    log.error("MagicParser: initialize(): couldn't load '" + magicURLString + "'");
-                    throw new MagicParseException("couldn't load '" + magicURLString + "'");
-                }
-
-                parser.parse(magicURLString);
+                parser.parse(new InputSource(stream));
             } catch (SAXParseException e) {
                 // ignore
             } catch (Exception e) {
