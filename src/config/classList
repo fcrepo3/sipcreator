@@ -1,4 +1,14 @@
-DC
-fedora.services.sipcreator.metadata.DCFields
-Plain Text
-fedora.services.sipcreator.metadata.MinimalMetadata
+# This file uses the java.util.Properties syntax.  Leading # and ! characters
+# denote comments.  The = or : characters are used to separate keys from
+# values.  Backslashes are used to escape whitespace, control characters
+# (like #, =, etc), as well as continue a logical line definition onto multiple
+# natural lines.
+
+# The semantics of this file is "display name = class name", where display name
+# is the text to be shown indicating when indicating a particular metadata
+# class.  The class name must be fully qualified.
+
+# This is the standard DC class
+DC=fedora.services.sipcreator.metadata.DCFields
+# This is a simple text metadata model
+Plain\ Text=fedora.services.sipcreator.metadata.MinimalMetadata

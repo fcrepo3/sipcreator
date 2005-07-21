@@ -8,24 +8,59 @@ import java.util.Observer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
-import fedora.services.sipcreator.acceptor.SIPEntryAcceptor;
+import fedora.services.sipcreator.acceptor.SelectableEntryAcceptor;
 import fedora.services.sipcreator.metadata.Metadata;
 
+/**
+ * This class represents a SelectableEntry node which exists inside a tree
+ * model.  Each tree model built on top of a tree of SelectableEntry objects
+ * should use a single SelectableEntryAcceptor to filter the nodes which
+ * actually appear in that particular view of the tree.  Note that the tree
+ * model is actually required to be passed to the Node upon instantiating the
+ * node.  This is required so that changes to the underlying SelectableEntry
+ * object are reflected immediately in the tree.
+ * <br>
+ * The metadata children of this node are displayed before any
+ * SelectableEntryNode children.  Thus, if this node has 3 metadata children
+ * and 4 SENode children, accessing the fifth child node would result in the
+ * 2nd SENode. 
+ * <br><br>
+ * @author Andy Scukanec - (ags at cs dot cornell dot edu)
+ */
 public class SelectableEntryNode implements TreeNode, Observer {
     
+    /** The entry which this node represents in the tree */
     private SelectableEntry entry;
     
+    /** The parent node of this node, or null if this node is the root */
     private SelectableEntryNode parent;
     
+    /** This hashtable maps from a String ID to a SelectableEntryNode object */
     private Hashtable childrenNodeTable = new Hashtable();
     
+    /** This hashtable maps from a String ID to a Metadata object */
     private Hashtable metadataNodeTable = new Hashtable();
     
-    private SIPEntryAcceptor acceptor;
+    /** The filter which defines the working set of nodes */
+    private SelectableEntryAcceptor acceptor;
     
+    /** The tree model in which this node exists */
     private DefaultTreeModel model;
     
-    public SelectableEntryNode(SelectableEntry newEntry, SelectableEntryNode newParent, SIPEntryAcceptor newAcceptor, DefaultTreeModel newModel) {
+    /**
+     * This constructor requries that the entry, parent, acceptor, and tree
+     * model all be known at the time this object is instantiated.  Only the
+     * parent may be null and only if this node is the root.  Note that this
+     * constructor does not actually insert the resulting node into the tree
+     * model.
+     * <br><br>
+     * @param newEntry The entry which this node represents in the tree.
+     * @param newParent The parent node, or null if this node is the root.
+     * @param newAcceptor The filter defining the working set of nodes in the
+     * tree.
+     * @param newModel The tree model in which this node will exist.
+     */
+    public SelectableEntryNode(SelectableEntry newEntry, SelectableEntryNode newParent, SelectableEntryAcceptor newAcceptor, DefaultTreeModel newModel) {
         model = newModel;
         entry = newEntry;
         entry.addObserver(this);
@@ -33,6 +68,11 @@ public class SelectableEntryNode implements TreeNode, Observer {
         acceptor = newAcceptor;
     }
     
+    /**
+     * Returns the entry which this node represents in the tree.
+     * <br><br>
+     * @return The entry which this node represents in the tree.
+     */
     public SelectableEntry getEntry() {
         return entry;
     }
@@ -41,10 +81,6 @@ public class SelectableEntryNode implements TreeNode, Observer {
         if (!acceptor.acceptsMetadata()) {
             return entry.getChildCount(acceptor);
         }
-        
-//        if (entry.isDirectory()) {
-//            return 1 + entry.getChildCount(acceptor);
-//        }
         
         return entry.getMetadataCount() + entry.getChildCount(acceptor);
     }

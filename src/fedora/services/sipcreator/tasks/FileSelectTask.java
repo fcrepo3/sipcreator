@@ -35,6 +35,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import beowulf.gui.Utility;
@@ -192,7 +193,7 @@ public class FileSelectTask extends JPanel implements Constants {
         
         private OpenFolderAction() {
             //putValue(Action.NAME, "Open File");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-folder.png");
+            URL imgURL = creator.getURL(FOLDER_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Changes the selected root directory file");
         }
@@ -225,7 +226,7 @@ public class FileSelectTask extends JPanel implements Constants {
                     JOptionPane.showMessageDialog(creator, "You must choose a directory to open!");
                 }
                 
-                creator.getCurrentFileLabel().setText(file.getCanonicalPath());
+                creator.setFileLabelText(file.getCanonicalPath());
             } catch (Exception e) {
                 Utility.showExceptionDialog(creator, e);
                 return;
@@ -259,7 +260,7 @@ public class FileSelectTask extends JPanel implements Constants {
 
         private OpenZipFileAction() {
             //putValue(Action.NAME, "Open ZIP");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-mime-application-zip.png");
+            URL imgURL = creator.getURL(ZIP_FILE_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Open a previously saved SIP file");
         }
@@ -283,7 +284,7 @@ public class FileSelectTask extends JPanel implements Constants {
             
             try {
                 openZipFile(file);
-                creator.getCurrentFileLabel().setText(file.getCanonicalPath());
+                creator.setFileLabelText(file.getCanonicalPath());
             } catch (Exception e) {
                 Utility.showExceptionDialog(creator, e);
                 return;
@@ -351,14 +352,16 @@ public class FileSelectTask extends JPanel implements Constants {
 
         private void handleCRules(ZipFile zipFile) throws IOException, SAXException {
             ZipEntry crulesEntry = zipFile.getEntry("crules.xml");
-            Document crulesDocument = creator.getXMLParser().parse(zipFile.getInputStream(crulesEntry));
+            InputSource is = new InputSource(zipFile.getInputStream(crulesEntry));
+            Document crulesDocument = creator.parseXML(is);
             
             creator.getConversionRulesTask().updateRules("crules.xml", new ConversionRules(crulesDocument));
         }
         
         private void handleMETS(ZipFile zipFile, ZipFileEntry rootNode) throws IOException, SAXException {
             ZipEntry metsEntry = zipFile.getEntry("METS.xml");
-            Document metsDocument = creator.getXMLParser().parse(zipFile.getInputStream(metsEntry));
+            InputSource is = new InputSource(zipFile.getInputStream(metsEntry));
+            Document metsDocument = creator.parseXML(is);
             
             Element metsNode = metsDocument.getDocumentElement();
             Element fileSecNode = DOMUtility.firstElementNamed(metsNode, METS_NS, "fileSec");

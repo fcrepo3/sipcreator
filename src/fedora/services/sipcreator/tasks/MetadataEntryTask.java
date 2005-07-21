@@ -89,8 +89,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
         saveSIPAction = new SaveSIPAction();
         closeCurrentTabAction = new CloseCurrentTabAction();
         
-        acceptor.getAcceptorList().add(filterAcceptor);
-        acceptor.getAcceptorList().add(new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED));
+        acceptor.addAcceptor(filterAcceptor);
+        acceptor.addAcceptor(new SelectionAcceptor(FileSystemEntry.FULLY_SELECTED | FileSystemEntry.PARTIALLY_SELECTED));
         acceptor.setAcceptsMetadata(true);
         
         metadataTreeDisplay.addMouseListener(eventHandler);
@@ -234,7 +234,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
                 int index = getIndexByToolTip(node.getMetadata().getDescriptiveName());
                 
                 if (index == -1) {
-                    MetadataPanelWrapper panel = new MetadataPanelWrapper(node.getMetadata().getPanel(), creator);
+                    MetadataPanelWrapper panel = new MetadataPanelWrapper(node.getMetadata(), creator);
                     metadataView.addTab(node.getMetadata().getShortName(), null,
                             panel, node.getMetadata().getDescriptiveName());
                     metadataView.setSelectedComponent(panel);
@@ -263,12 +263,17 @@ public class MetadataEntryTask extends JPanel implements Constants {
                 
                 String msg = "Choose the new metadata's class";
                 String title = "Add Metadata";
-                Object[] options = creator.getKnownMetadataDisplayNames().toArray();
+//                Object[] options = creator.getKnownMetadataDisplayNames().toArray();
+                Object[] options = creator.getKnownMetadataClasses().keySet().toArray();
+                if (options.length == 0) {
+                    JOptionPane.showMessageDialog(creator, "No known metadata types, cannot add metadata");
+                    return;
+                }
                 Object selection = JOptionPane.showInputDialog
                 (creator, msg, title, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                 if (selection == null) return;
-                int index = creator.getKnownMetadataDisplayNames().indexOf(selection);
-                Class selectedClass = (Class)creator.getKnownMetadataClasses().get(index);
+//                int index = creator.getKnownMetadataDisplayNames().indexOf(selection);
+                Class selectedClass = (Class)creator.getKnownMetadataClasses().get(selection);
                 Constructor constructor = selectedClass.getConstructor(null);
                 Metadata metadata = (Metadata)constructor.newInstance(null);
                 
@@ -311,7 +316,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
 
         private CloseCurrentTabAction() {
             //putValue(Action.NAME, "Close Tab");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "stock_close.png");
+            URL imgURL = creator.getURL(CLOSE_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Closes the current tab");
         }
@@ -397,7 +402,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
         
         private SaveSIPAction() {
             //putValue(Action.NAME, "Save SIP");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-dev-floppy.png");
+            URL imgURL = creator.getURL(SAVE_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Save the current files and metadata as a SIP file");
         }

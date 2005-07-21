@@ -18,26 +18,52 @@ import beowulf.gui.Utility;
 import fedora.services.sipcreator.metadata.Metadata;
 import fedora.services.sipcreator.metadata.MetadataPanel;
 
+/**
+ * This class is the UI view class which should be used to display and edit
+ * all Metadata objects.
+ * <br><br>
+ * @author Andy Scukanec - (ags at cs dot cornell dot edu)
+ */
 public class MetadataPanelWrapper extends JPanel implements ActionListener, DocumentListener {
     
+    /** */
     private static final long serialVersionUID = 3257002172494263094L;
 
+    /** The metadata object that this UI view is displaying */
+    private Metadata metadata;
+    
+    /** The metadata panel contained in this UI view */
     private MetadataPanel metadataPanel;
     
+    /** The text field where the label may be edited for the metadata object */
     private JTextField metadataLabelField = new JTextField();
     
+    /** The combo box where the type may be changed for the metadata object */
     private JComboBox metadataTypeBox;
     
+    /** The text field that displays the name of this metadata object */
     private JTextField metadataNameField = new JTextField();
     
+    /** The containing sip creator environment */
     private SIPCreator creator;
     
-    public MetadataPanelWrapper(MetadataPanel newMetadataPanel, SIPCreator newCreator) {
+    /**
+     * This constructor takes in the metadata panel and the SIP Creator object
+     * that will display the resulting UI widget.  The SIP creator is necessary
+     * to provide a communication link between this UI component and the
+     * conversion rules currently in use, which affect the type of the
+     * represented metadata.
+     * <br><br>
+     * @param newMetadata The metadata to be displayed.
+     * @param newCreator The SIP Creator in which this UI component will live.
+     */
+    public MetadataPanelWrapper(Metadata newMetadata, SIPCreator newCreator) {
         super(new BorderLayout());
         creator = newCreator;
         
         metadataTypeBox = new JComboBox(creator.getConversionRulesTask().getRules().getDatastreamComboBoxModel());
-        metadataPanel = newMetadataPanel;
+        metadata = newMetadata;
+        metadataPanel = newMetadata.getPanel();
         
         JPanel temp = new JPanel(new GridLayout(3, 1, 5, 5));
         temp.add(Utility.addLabelLeft("Label: ", metadataLabelField));
@@ -60,12 +86,13 @@ public class MetadataPanelWrapper extends JPanel implements ActionListener, Docu
     }
     
     
-    public MetadataPanel getMetadataPanel() {
-        return metadataPanel;
-    }
-    
+    /**
+     * Returns the metadata represented by this UI component.
+     * <br><br>
+     * @return The metadata represented by this UI component.
+     */
     public Metadata getMetadata() {
-        return metadataPanel.getMetadata();
+        return metadata;
     }
     
     
@@ -101,13 +128,16 @@ public class MetadataPanelWrapper extends JPanel implements ActionListener, Docu
     }
     
     
+    /**
+     * This method refreshes the UI view from the metadata data model. 
+     */
     public void updateFromMetadata() {
         ConversionRules rules = creator.getConversionRulesTask().getRules();
-        Object template = rules.getDatastreamTemplate(metadataPanel.getMetadata().getType());
+        Object template = rules.getDatastreamTemplate(metadata.getType());
         if (template != null) {
             metadataTypeBox.setSelectedItem(template);
         } else {
-            String type = metadataPanel.getMetadata().getType();
+            String type = metadata.getType();
             int choice = JOptionPane.showConfirmDialog(creator,
                     "Would you like to add \"" + type + "\" as a new datastream template?",
                     "Add New Template", JOptionPane.YES_NO_OPTION);
@@ -118,12 +148,16 @@ public class MetadataPanelWrapper extends JPanel implements ActionListener, Docu
             }
         }
         
-        metadataLabelField.setText(metadataPanel.getMetadata().getLabel());
-        metadataNameField.setText(metadataPanel.getMetadata().getID());
+        metadataLabelField.setText(metadata.getLabel());
+        metadataNameField.setText(metadata.getID());
         
         metadataPanel.updateFromMetadata();
     }
     
+    /**
+     * This method causes all unpushed metadata in the UI view to be pushed
+     * to the underlying metadata model.
+     */
     public void updateMetadata() {
         getMetadata().setLabel(metadataLabelField.getText());
         

@@ -7,13 +7,13 @@ import beowulf.event.GraphListener;
 import beowulf.model.Matrix;
 import beowulf.model.graph.Edge;
 import beowulf.model.graph.GraphModel;
-import fedora.services.sipcreator.acceptor.SIPEntryAcceptor;
+import fedora.services.sipcreator.acceptor.SelectableEntryAcceptor;
 import fedora.services.sipcreator.acceptor.SelectionAcceptor;
 import fedora.services.sipcreator.metadata.Metadata;
 
 public class ConversionRulesGraph implements GraphModel {
 
-    private SIPEntryAcceptor acceptor = new SelectionAcceptor(SelectableEntry.FULLY_SELECTED | SelectableEntry.PARTIALLY_SELECTED);
+    private SelectableEntryAcceptor acceptor = new SelectionAcceptor(SelectableEntry.FULLY_SELECTED | SelectableEntry.PARTIALLY_SELECTED);
     
     private Vector nodes = new Vector();
     

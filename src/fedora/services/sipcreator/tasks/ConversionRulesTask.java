@@ -519,7 +519,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         private LoadConversionRulesAction() {
             //putValue(Action.NAME, "Load CRules");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-folder.png");
+            URL imgURL = creator.getURL(FOLDER_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Load in a conversion rules file");
         }
@@ -535,7 +535,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 if (choice != JFileChooser.APPROVE_OPTION) return;
             
                 InputSource is = new InputSource(new FileInputStream(fileChooser.getSelectedFile()));
-                ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(is));
+                ConversionRules crules = new ConversionRules(creator.parseXML(is));
                 updateRules(fileChooser.getSelectedFile().getCanonicalPath(), crules);
             } catch (Exception e) {
                 Utility.showExceptionDialog(creator, e);
@@ -550,7 +550,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         private LoadConversionRulesWebAction() {
             //putValue(Action.NAME, "Load CRules Web");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gftp.png");
+            URL imgURL = creator.getURL(WEB_FOLDER_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Load in a conversion rules file from the web");
         }
@@ -561,7 +561,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
                 String urlString = JOptionPane.showInputDialog(creator, message);
                 if (urlString == null || urlString.length() == 0) return;
 
-                ConversionRules crules = new ConversionRules(creator.getXMLParser().parse(urlString));
+                ConversionRules crules = new ConversionRules(creator.parseXML(new InputSource(urlString)));
                 updateRules(urlString, crules);
             } catch (Exception e) {
                 Utility.showExceptionDialog(creator, e);
@@ -576,7 +576,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         private SaveConversionRulesAction() {
             //putValue(Action.NAME, "Save CRules");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "gnome-dev-floppy.png");
+            URL imgURL = creator.getURL(SAVE_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Save the conversion rules to a file");
         }
@@ -614,7 +614,7 @@ public class ConversionRulesTask extends JPanel implements ListSelectionListener
 
         private GenerateGraphAction() {
             //putValue(Action.NAME, "Generate Graph");
-            URL imgURL = creator.getURL(IMAGE_DIR_NAME + "stock_reload.png");
+            URL imgURL = creator.getURL(RELOAD_IMAGE_NAME);
             putValue(Action.SMALL_ICON, new ImageIcon(creator.getImage(imgURL)));
             putValue(Action.SHORT_DESCRIPTION, "Generate a graph based on the current rules and tree");
         }

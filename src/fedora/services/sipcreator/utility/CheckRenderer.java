@@ -1,4 +1,5 @@
 package fedora.services.sipcreator.utility;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -22,28 +23,58 @@ import fedora.services.sipcreator.MetadataNode;
 import fedora.services.sipcreator.SIPCreator;
 import fedora.services.sipcreator.SelectableEntryNode;
 
+/**
+ * 
+ * <br><br>
+ * @author Andy Scukanec - (ags at cs dot cornell dot edu)
+ */
 public class CheckRenderer extends JPanel implements TreeCellRenderer, Constants {
-    
+   
+    /** */
     private static final long serialVersionUID = 3256722900836234808L;
 
+    /** The image used on Metadata elements in the tree */
     private ImageIcon metadataIcon;
     
+    /** The border to draw on the selected elements */
     private Border selectedBorder = BorderFactory.createLineBorder(UIManager.getColor("Tree.selectionBorderColor"));
     
+    /** The border to draw on unselected elements*/
     private Border unselectedBorder = BorderFactory.createEmptyBorder(1, 1, 1, 1);
     
+    /** Whether or not to draw the checkbox */
     private boolean checkShowing = true;
     
+    /** The checkbox used to indicate selection status */
     private JCheckBox check = new JCheckBox();
     
+    /** The label to disaply other information about the element */
     private JLabel label = new JLabel();
     
+    /**
+     * This constructor produces a CheckRenderer object with a visible check
+     * box.  The SIPCreator parameter is used to resolve relative URLs against
+     * the code base location (which is accessible through the Applet API).
+     * <br><br>
+     * @param creator The SIPCreator applet in which this CheckRenderer shall
+     * live.
+     */
     public CheckRenderer(SIPCreator creator) {
         this(true, creator);
     }
     
+    /**
+     * This constructor produces a CheckRenderer object whose checkbox
+     * visibility is indicated by the first parameter.  The SIPCreator
+     * parameter is used to resolve relative URLs against the code base
+     * location (which is accessible through the Applet API).
+     * <br><br>
+     * @param newCheckShowing Whether or not to initially draw the checkbox.
+     * @param creator The SIPCreator applet in which this CheckRenderer shall
+     * live.
+     */
     public CheckRenderer(boolean newCheckShowing, SIPCreator creator) {
-        URL imgURL = creator.getURL(IMAGE_DIR_NAME + "metadata.png");
+        URL imgURL = creator.getURL(METADATA_IMAGE_NAME);
         metadataIcon = new ImageIcon(creator.getImage(imgURL));
         setCheckShowing(newCheckShowing);
         label.setOpaque(true);
@@ -129,14 +160,31 @@ public class CheckRenderer extends JPanel implements TreeCellRenderer, Constants
         super.setBackground(color);
     }
 
+    /**
+     * Returns whether or not the checkbox is visible.
+     * <br><br>
+     * @return Whether or not the checkbox is visible.
+     */
     public boolean isCheckShowing() {
         return checkShowing;
     }
 
+    /**
+     * Sets the checkbox visibility status.
+     * <br><br>
+     * @param newCheckShowing The new checkbox visibility status.
+     */
     public void setCheckShowing(boolean newCheckShowing) {
         checkShowing = newCheckShowing;
     }
     
+    /**
+     * Returns the width of the checkbox.  This is useful for determining
+     * if the user clicked somewhere in the checkbox, or somewhere else (say
+     * on the label).
+     * <br><br>
+     * @return The width of the checkbox.
+     */
     public int getCheckBoxWidth() {
         return check.getWidth();
     }
