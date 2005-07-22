@@ -60,9 +60,11 @@ import fedora.services.sipcreator.utility.CheckRenderer;
 
 public class MetadataEntryTask extends JPanel implements Constants {
 
+    /** */
     private static final long serialVersionUID = 3257850999698698808L;
     
     private FilterAction filterAction;
+    private RemoveMetadataAction removeMetadataAction;
     private AddMetadataAction addMetadataAction;
     private SaveSIPAction saveSIPAction;
     private CloseCurrentTabAction closeCurrentTabAction;
@@ -85,6 +87,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
         creator = newCreator;
         
         filterAction = new FilterAction();
+        removeMetadataAction = new RemoveMetadataAction();
         addMetadataAction = new AddMetadataAction();
         saveSIPAction = new SaveSIPAction();
         closeCurrentTabAction = new CloseCurrentTabAction();
@@ -140,6 +143,7 @@ public class MetadataEntryTask extends JPanel implements Constants {
         JPopupMenu result = new JPopupMenu();
         
         result.add(addMetadataAction);
+        result.add(removeMetadataAction);
         
         return result;
     }
@@ -208,6 +212,10 @@ public class MetadataEntryTask extends JPanel implements Constants {
         return addMetadataAction;
     }
     
+    public RemoveMetadataAction getRemoveMetadataAction() {
+        return removeMetadataAction;
+    }
+    
     
     private class EventHandler extends MouseAdapter {
         
@@ -246,8 +254,39 @@ public class MetadataEntryTask extends JPanel implements Constants {
         
     }
     
+    public class RemoveMetadataAction extends AbstractAction {
+        
+        /**  */
+        private static final long serialVersionUID = -7240338781145021743L;
+
+        public RemoveMetadataAction() {
+            putValue(Action.NAME, "Remove Metadata");
+            putValue(Action.SHORT_DESCRIPTION, "Remove metadata from it's parent entry");
+        }
+        
+        public void actionPerformed(ActionEvent ae) {
+            try {
+                TreeNode lastElement = getSelectedNode();
+                if (!(lastElement instanceof MetadataNode)) return;
+                Metadata metadata = ((MetadataNode)lastElement).getMetadata();
+                SelectableEntry entry = metadata.getEntry();
+                metadata.setEntry(null);
+                entry.removeMetadata(metadata);
+                
+                int index = getIndexByToolTip(metadata.getDescriptiveName());
+                if (index != -1) {
+                    metadataView.removeTabAt(index);
+                }
+            } catch (Exception e) {
+                Utility.showExceptionDialog(creator, e);
+            }
+        }
+        
+    }
+    
     public class AddMetadataAction extends AbstractAction {
         
+        /** */
         private static final long serialVersionUID = 414125917858160620L;
 
         public AddMetadataAction() {
@@ -263,7 +302,6 @@ public class MetadataEntryTask extends JPanel implements Constants {
                 
                 String msg = "Choose the new metadata's class";
                 String title = "Add Metadata";
-//                Object[] options = creator.getKnownMetadataDisplayNames().toArray();
                 Object[] options = creator.getKnownMetadataClasses().keySet().toArray();
                 if (options.length == 0) {
                     JOptionPane.showMessageDialog(creator, "No known metadata types, cannot add metadata");
@@ -272,8 +310,8 @@ public class MetadataEntryTask extends JPanel implements Constants {
                 Object selection = JOptionPane.showInputDialog
                 (creator, msg, title, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                 if (selection == null) return;
-//                int index = creator.getKnownMetadataDisplayNames().indexOf(selection);
-                Class selectedClass = (Class)creator.getKnownMetadataClasses().get(selection);
+                String selectedClassName = (String)creator.getKnownMetadataClasses().get(selection);
+                Class selectedClass = Class.forName(selectedClassName);
                 Constructor constructor = selectedClass.getConstructor(null);
                 Metadata metadata = (Metadata)constructor.newInstance(null);
                 
