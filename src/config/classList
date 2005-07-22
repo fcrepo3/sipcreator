@@ -9,6 +9,6 @@
 # class.  The class name must be fully qualified.
 
 # This is the standard DC class
-DC=fedora.services.sipcreator.metadata.DCFields
+DC=fedora.services.sipcreator.metadata.DublinCore
 # This is a simple text metadata model
 Plain\ Text=fedora.services.sipcreator.metadata.MinimalMetadata
