@@ -33,6 +33,15 @@ import fedora.services.sipcreator.tasks.ConversionRulesTask;
 import fedora.services.sipcreator.tasks.FileSelectTask;
 import fedora.services.sipcreator.tasks.MetadataEntryTask;
 
+/**
+ * This class is the overarching "system" class for the entire application.
+ * A lot of the public methods in this class exist as instance methods because
+ * of problems with how different browsers handle static methods in applets.
+ * Apparently, some browsers only instantiate one JVM *across multiple
+ * broswer windows*, creating obvious issues with static fields.
+ * <br><br>
+ * @author Andy Scukanec - (ags at cs dot cornell dot edu)
+ */
 public class SIPCreator extends JApplet implements Constants {
 
     /** */
@@ -101,7 +110,7 @@ public class SIPCreator extends JApplet implements Constants {
         Container cp = getContentPane();
         cp.setLayout(new BorderLayout(5, 5));
         cp.add(createCenterPanel(), BorderLayout.CENTER);
-        cp.add(createStatusBar(), BorderLayout.SOUTH);
+        cp.add(createStatusBar(), BorderLayout.NORTH);
         
         //Perform default loading activities
         loadDefaults();
@@ -275,50 +284,127 @@ public class SIPCreator extends JApplet implements Constants {
         }
     }
     
+    /**
+     * Returns the properties for the sipcreator system.  The file defining
+     * these proprties is indicated by the String Constants.CONFIG_FILE_NAME.
+     * <br><br>
+     * @return The properties for the sipcreator system.
+     */
     public Properties getProperties() {
         return sipCreatorProperties;
     }
     
+    /**
+     * Given a File object, this method will return the guessed mime type
+     * of that file.  The guess made will depend on the underlying mime
+     * type detection library used.  This library is defined in the
+     * properties file for the SIPCreator system, using the key
+     * Constants.MIMETYPE_CLASS_NAME.
+     * <br><br>
+     * @param file The file whose mime type will be returned.
+     * @return The mime type of the given file.
+     */
     public String getMimeType(File file) {
         return mimetypeDetector.getMimeType(file);
     }
     
+    /**
+     * Returns the metadata entry task object.
+     * <br><br>
+     * @return The metadata entry task object.
+     */
     public MetadataEntryTask getMetadataEntryTask() {
         return metadataEntryTask;
     }
     
+    /**
+     * Returns the conversion rules task object.
+     * <br><br>
+     * @return The conversion rules task object.
+     */
     public ConversionRulesTask getConversionRulesTask() {
         return conversionRulesTask;
     }
     
+    /**
+     * Returns the file selection task object.
+     * <br><br>
+     * @return The file selection task object.
+     */
     public FileSelectTask getFileSelectTask() {
         return fileSelectTask;
     }
     
+    /**
+     * This method sets the text on the label used to indicate the currently
+     * open file/folder providing the root to the content tree in use.
+     * <br><br>
+     * @param text The name of the currently open file/folder.
+     */
     public void setFileLabelText(String text) {
         currentFileLabel.setText(text);
     }
     
+    /**
+     * Returns the progress bar visible to the entire system.
+     * <br><br>
+     * @return The progress bar visible to the entire system.
+     */
     public JProgressBar getProgressBar() {
         return progressBar;
     }
     
+    /**
+     * Returns a properties object defining a mapping from display
+     * names to class names of metadata subclasses.  This mapping is defined
+     * by a file whose name is accessed in the SIPCreator properties file with
+     * the key Constants.METADATA_CLASS_LIST.
+     * <br><br>
+     * @return A properties object mapping from display names to class names.
+     */
     public Properties getKnownMetadataClasses() {
         return knownMetadataClasses;
     }
     
+    /**
+     * This method takes in an input source object and runs it through the
+     * system parser.  This method exists so that only one parser need exist
+     * throughout the whole system.
+     * <br><br>
+     * @param is The input source of the XML data to parsed.
+     * @return The parsed XML Document.
+     * @throws IOException If there is a problem reading the input source.
+     * @throws SAXException If the input source is syntactically invalid.
+     */
     public Document parseXML(InputSource is) throws IOException, SAXException {
         return documentBuilder.parse(is);
     }
     
+    /**
+     * Returns the system file chooser.  This is done so that only one file
+     * chooser object need exist, and so that all the file chooser contexts
+     * remember the last used directory.
+     * <br><br>
+     * @return The system file chooser.
+     */
     public JFileChooser getFileChooser() {
         return fileChooser;
     }
     
+    /**
+     * Returns the file filter used to accept XML files.
+     * <br><br>
+     * @return The file filter used to accept XML files.
+     */
     public FileFilter getXMLFilter() {
         return xmlFilter;
     }
     
+    /**
+     * Returns the file filter used to accept ZIP files.
+     * <br><br>
+     * @return The file filter used to accept ZIP files.
+     */
     public FileFilter getZIPFilter() {
         return zipFilter;
     }
