@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="SIPCreator" default="dist" basedir=".">
+
+  <path id="all-jars.path">
+    <pathelement location="lib/axis.jar"/>
+    <pathelement location="lib/jakarta-oro-2.0.7.jar"/>
+    <pathelement location="lib/activation.jar"/>
+    <pathelement location="lib/beowulf-1_4.jar"/>
+    <pathelement location="lib/log4j-1.2.8.jar"/>
+  </path>
+
+  <target name="classes" depends="prep"
+          description="build all java classes into build/classes/">
+    <javac srcdir="src" destdir="build/classes" includes="**/*.java" classpathref="all-jars.path"/>
+  </target>
+
+  <target name="dist" depends="classes" description="package SIPCreator for distribution into dist/">
+    <copy todir="dist/lib">
+      <fileset dir="lib"/>
+    </copy>
+    <copy todir="dist">
+      <fileset dir="src/html"/>
+    </copy>
+    <copy todir="dist/samples">
+      <fileset dir="src/samples"/>
+    </copy>
+    <copy todir="dist/config">
+      <fileset dir="src/config"/>
+    </copy>
+    <copy todir="dist/images">
+      <fileset dir="src/images"/>
+    </copy>
+    <jar jarfile="dist/SIPCreator.jar" basedir="build/classes" includes="**/*.class"/>
+    <!--
+To generate a bogus key that will work with the setting below, run:
+
+keytool -genkey -alias samplekey -storepass samplepass -keystore keystore
+
+... and answer the propmts.
+
+At the end, hit enter to use the same password for the key as for the keystore.
+    -->
+    <signjar jar="dist/SIPCreator.jar" keystore="keystore" alias="samplekey" storepass="samplepass"/>
+  </target>
+
+  <target name="prep">
+    <mkdir dir="dist"/>
+    <mkdir dir="build"/>
+    <mkdir dir="build/classes"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="build"/>
+    <delete dir="dist"/>
+  </target>
+
+</project>
