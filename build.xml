@@ -6,12 +6,12 @@
     <pathelement location="lib/jakarta-oro-2.0.7.jar"/>
     <pathelement location="lib/activation.jar"/>
     <pathelement location="lib/beowulf-1_4.jar"/>
-    <pathelement location="lib/log4j-1.2.8.jar"/>
+    <pathelement location="lib/log4j-1.2.14.jar"/>
   </path>
 
   <target name="classes" depends="prep"
           description="build all java classes into build/classes/">
-    <javac srcdir="src" destdir="build/classes" includes="**/*.java" classpathref="all-jars.path"/>
+    <javac srcdir="src" destdir="build/classes" includes="**/*.java" classpathref="all-jars.path" source="1.4" target="1.4"/>
   </target>
 
   <target name="dist" depends="classes" description="package SIPCreator for distribution into dist/">
