@@ -1,9 +1,6 @@
-This Java Applet helps to create SIPs appropriate for submittal to the Fedora DirIngest service.
+Fedora SIP Creator
+------------------
+This is a Java applet for preparing Submission Information Packages ("SIPs") 
+for use with the Fedora Directory Ingest Service.
 
-Note that before the build will succeed, you'll have to use java's "keytool" 
-to make a keystore so that the applet can be signed during the build.  
-
-Instructions are in the comments of the build.xml.  After "ant dist" 
-(java 1.5's compiler will give warnings which can be safely ignored), 
-you can go into the dist/ directory and view Test.html with
-your browser to see the interface.
+For build and use instructions, please see src/doc/index.html

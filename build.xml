@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="SIPCreator" default="dist" basedir=".">
 
+  <property name="sipcreator.version" value="1.1"/>
+
   <path id="all-jars.path">
     <pathelement location="lib/axis.jar"/>
     <pathelement location="lib/jakarta-oro-2.0.7.jar"/>
@@ -8,6 +10,24 @@
     <pathelement location="lib/beowulf-1_4.jar"/>
     <pathelement location="lib/log4j-1.2.14.jar"/>
   </path>
+
+  <target name="srcrelease" depends="clean">
+    <copy todir="dist/release/sipcreator-${sipcreator.version}-src">
+      <fileset dir=".">
+        <exclude name="dist/**"/>
+      </fileset>
+    </copy>
+    <zip zipfile="dist/release/sipcreator-${sipcreator.version}-src.zip" basedir="dist/release" includes="sipcreator-${sipcreator.version}-src/**"/>
+    <delete dir="dist/release/sipcreator-${sipcreator.version}-src"/>
+  </target>
+
+  <target name="release" depends="srcrelease" description="Build the source distribution in dist/release">
+    <checksum fileext=".md5">
+      <fileset dir="dist/release">
+        <include name="*.zip"/>
+      </fileset>
+    </checksum>
+  </target>
 
   <target name="classes" depends="prep"
           description="build all java classes into build/classes/">

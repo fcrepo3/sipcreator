@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+<head>
+
+  
+  
+  <title>Fedora SIP Creator</title>
+  <link rel="stylesheet" type="text/css" href="docstyle.css" />
+</head>
+
+
+
+
+<body>
+
+  
+<div id="header">
+    <a href="http://www.fedora.info/download/2.2/userdocs/index.html" id="logo"></a>
+
+    
+<div id="title">
+      
+<h1>Fedora SIP Creator</h1>
+<h2>For Fedora Version 2.2</h2>
+
+      <br />
+
+    </div>
+
+  </div>
+
+
+<div id="toc">
+    
+<h2>Table of Contents</h2>
+    
+
+        
+<ol>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#installation">Installation</a>
+            <li><a href="#use">Use</a></li>
+</ol>
+
+
+    </div>
+
+<p>&nbsp;</p>
+
+
+<div class="sect">
+  
+<h2><a name="overview">1. Overview</a></h2>
+
+  
+<p>
+     The Fedora SIP Creator is a Java applet for preparing Submission
+     Information Packages ("SIPs") for use with the 
+     <a href="http://www.fedora.info/download/2.2/services/diringest/doc/index.html">
+     Fedora Directory Ingest Service</a>.
+  </p>
+
+  
+</div>
+
+
+<div class="sect">
+  
+<h2><a name="installation">2. Installation</a></h2>
+
+<p>
+   First, the applet must be compiled:
+   <ul>
+     <li> Make sure you have a 1.4+ JDK and ant installed.</li>
+     <li> Change to the base directory of the source distribution.</li>
+     <li> Type <code>keytool -genkey -alias samplekey -storepass samplepass -keystore keystore</code>
+          and answer the prompts.  This will generate a keystore file that
+          will be used to digitally sign the applet jar file during the build.</li>
+     <li> Type <code>ant dist</code>.  This will build the signed applet
+          jar into the dist/ directory.</li>
+   </ul>
+</p>
+<p>
+  If desired, copy the content of the dist/ directory to a web-accessible
+  location.
+</p>
+  
+</div>
+
+
+<div class="sect">
+  
+<h2><a name="use">3. Use</a></h2>
+
+  
+<p>
+  <ul>
+    <li> Point your browser to the Test.html file.  This can be loaded
+         from a web server or directly from your local filesystem.</li>
+    <li> In the "File Selection" tab:
+         <ul>
+           <li> Click the "Open" icon and select the local directory containing
+                the files you want to ingest.</li>
+           <li> Check the specific directories and/or files to be ingested.
+                <p>
+                <img src="file-selection.png"/>
+                </p>
+           </li>
+         </ul>
+    </li>
+    <li> In the "Metadata Entry" tab:
+         <ul>
+           <li> Right click any file you want to add metadata to,
+                answer any prompts and fill in any values.
+                <p>
+                <img src="metadata-entry.png"/>
+                </p>
+           </li>
+           <li> Double click any file whose MIME type you want to change.
+                Initial MIME types for each file are guessed based on the
+                extension and content.</li>
+           <li> When finished, click the floppy disk "Save" icon,
+                and enter a filename with a .zip extension.
+                <p>
+                <img src="save-sip.png"/>
+                </p>
+          </li>
+         </ul>
+    </li>
+    <li> Upload the ZIP file to the
+        <a href="http://www.fedora.info/download/2.2/services/diringest/doc/index.html">
+        Directory Ingest service</a>
+    </li>
+  </ul>
+</p>
+  
+<div id="footer">
+    
+<div id="copyright">
+      Copyright &copy; 2006-2007 Fedora Project
+    </div>
+
+
+    
+<div id="lastModified">
+      Last Modified 
+<script type="text/javascript">
+      //<![CDATA[
+            var cvsDate = "$Date$";
+            var parts = cvsDate.split(" ");
+            var modifiedDate = parts[1];
+            document.write(modifiedDate);
+      //]]>
+      </script>
+    </div>
+
+  </div>
+
+</body>
+</html>
